@@ -134,12 +134,16 @@ class _WebViewScreenState extends State<WebViewScreen> {
               }
             }
           }
-          if(loadingCourseNumber < courseList.length - 2) {
+          if(loadingCourseNumber < courseList.length - 1) {
             for(int i = loadingCourseNumber + 1; i < courseList.length; i++){
               if(courseList[i]['isHomework'] == 'true'){
                 loadingCourseNumber = i;
                 await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseList[i]['ID']! + '_query');
                 break;
+              }
+              if(i == courseList.length - 1){
+                loadingCourseNumber = 0;
+                await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseList[loadingCourseNumber]['ID']! + '_report');
               }
             }
           } else {
