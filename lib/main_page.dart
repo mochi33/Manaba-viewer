@@ -24,11 +24,7 @@ class _MainPageState extends State<MainPage> {
           actions: [
             IconButton(
                 onPressed: () async {
-                  if(_webViewScreenKey.currentState == null){
-                    print("nullだよ");
-                  }
-                  print("nullでない");
-                  _webViewScreenKey.currentState!.setState(() {});;
+                  mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
                 },
                 icon: const Icon(Icons.update),
             )

@@ -11,6 +11,7 @@ import 'main_page.dart';
 List<Map<String, String>> courseList = <Map<String, String>>[];
 List<Map<String, String>> queryData = <Map<String, String>>[];
 List<Map<String, String>> reportData = <Map<String, String>>[];
+WebViewController? mainController;
 
 class WebViewScreen extends StatefulWidget {
 
@@ -29,10 +30,12 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
+
     if (Platform.isAndroid) {
       WebView.platform = SurfaceAndroidWebView();
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +70,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         // ページタイトル取得
         final controller = await _controller.future;
+        mainController = controller;
         String? title = await controller.getTitle();
 
         //サインインページ表示時
