@@ -1,9 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-
-import 'first_view.dart';
+import 'package:untitled1/manage.dart';
+import 'package:untitled1/web_view_screen.dart';
 
 void main() async {
-  runApp(FirstView());
+  runApp(const MyApp());
 }
+
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      title: 'manaba viewer',
+      home: Manage(),
+    );
+  }
+}
+
 

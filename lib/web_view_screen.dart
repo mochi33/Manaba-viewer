@@ -8,12 +8,14 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import 'main_page.dart';
 
-List<String> courseList = <String>[];
-List<String> queryData = <String>[];
-List<String> reportData = <String>[];
+List<Map<String, String>> courseList = <Map<String, String>>[];
+List<Map<String, String>> queryData = <Map<String, String>>[];
+List<Map<String, String>> reportData = <Map<String, String>>[];
 
 class WebViewScreen extends StatefulWidget {
-  const WebViewScreen({Key? key}) : super(key: key);
+
+  GlobalKey<State<MainPage>> mainPageKey;
+  WebViewScreen({Key? key, required this.mainPageKey}) : super(key: key);
 
   @override
   _WebViewScreenState createState() => _WebViewScreenState();
@@ -21,11 +23,8 @@ class WebViewScreen extends StatefulWidget {
 
 class _WebViewScreenState extends State<WebViewScreen> {
   final Completer<WebViewController> _controller = Completer<WebViewController>();
-  final storage = const FlutterSecureStorage();
-  final GlobalKey<State<MainPage>> _key = GlobalKey<State<MainPage>>();
-
-  bool _isLoading = false;
-  int courseNumber = 0;
+  FlutterSecureStorage storage = const FlutterSecureStorage();
+  int loadingCourseNumber = 0;
 
   @override
   void initState() {
@@ -38,19 +37,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          _buildBody(),
-          MainPage(key: _key,),
-        ],
-      ),
+      body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
     return Column(
       children: [
-        if (_isLoading) const LinearProgressIndicator(),
         Expanded(
           child: _buildWebView(),
         ),
@@ -59,6 +52,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
   }
 
   Widget _buildWebView() {
+    final _mainPageKey = widget.mainPageKey;
+
     return WebView(
       initialUrl: 'https://ct.ritsumei.ac.jp/ct/home_course',
       // jsを有効化
@@ -66,21 +61,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
       // controllerを登録
       onWebViewCreated: _controller.complete,
       // ページの読み込み開始
-      onPageStarted: (String url) {
-        // ローディング開始
-        setState(() {
-          _isLoading = true;
-        });
-      },
+      onPageStarted: (String url) {},
       // ページ読み込み終了
       onPageFinished: (String url) async {
-        // ローディング終了
-        setState(() {
-          _isLoading = false;
-        });
+
         // ページタイトル取得
         final controller = await _controller.future;
         String? title = await controller.getTitle();
+
         //サインインページ表示時
         if(title?.contains('Web Single Sign On') == true) {
           String userID = await storage.read(key: 'ID') ?? '';
@@ -90,79 +78,125 @@ class _WebViewScreenState extends State<WebViewScreen> {
           await controller.runJavascript('document.getElementById("Submit").click();');
         }
         final url = await controller.currentUrl();
+
         //サインイン成功時
         if(url == 'https://ct.ritsumei.ac.jp/ct/home_course') {
-          courseList = <String>[];
-          queryData = <String>[];
-          reportData = <String>[];
+          courseList.clear();
+          queryData.clear();
+          reportData.clear();
+          loadingCourseNumber = 0;
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
-          print(html);
-          final List<String> trList = html.split(r'\u003Ctr');
-          final List<String> periodList = trList.sublist(2);
-          print(periodList);
-          for(int i = 0; i < 5; i++){
-            final a = periodList[i].split("'event':event,'href':'").sublist(1);
-            courseList.addAll(a);
+          print("html---" + html);
+          if (html != 'null') {
+            final List<String> trList = html.split(r'\u003Ctr');
+            final List<String> periodList = trList.sublist(2);
+            List<String> courseTexts = <String>[];
+            for(String period in periodList){
+              period.split(r'course-cell\">').sublist(1).forEach((text) {
+                courseTexts.add(text.split(r'\u003C/td>')[0]);
+              });
+            }
+            for (var text in courseTexts) {
+              courseList.add({
+                'ID' : text.split(r'href=\"course_')[1].split(r'\">')[0],
+                'title' : text.split(r'href=\"course_')[1].split(r'\">')[1].split(r'\u003C/a>')[0],
+                'isHomework' : text.contains('未提出の課題') ? 'true' : 'false',
+              });
+            }
+            for(Map course in courseList){
+              print('b' + course['title']);
+            }
+            if(courseList.isNotEmpty) {
+                await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseList[0]['ID']! + '_query');
+            }
           }
-          print("courseList-------" + courseList[11]);
-          if(courseList.isNotEmpty) {
-              await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/' + courseList[0].substring(0, 14) + '_query');
-          }
+
         }
+
         //小テストページ時
         if(url?.contains('query') == true){
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
-          if(html != null){
+          if(html != 'null'){
             print('html-----' + html);
             final a = html.split(r'\u003Ctr onmouseover');
             for(int i = 1; i < a.length; i++){
-              if(a[i].contains('deadline')){
+              if(a[i].contains('受付中') && a[i].contains('未提出')){
                 print('aiueo');
-                queryData.add(a[i].split(r'\u003Ca')[1]);
-                print(a[i].split(r'\u003Ca')[1]);
-                _key.currentState!.setState(() {});
+                final b = a[i].split(r'\u003Ca href=\"')[1].split(r'\">');
+                queryData.add({
+                  'ID' : b[0],
+                  'courseID' : courseList[loadingCourseNumber]['ID']!,
+                  'title' : b[1].split(r'\u003C')[0],
+                  'deadline' : a[i].split(r'center\">')[3].split(r'\u003C')[0],
+                });
+                debugPrint(queryData[queryData.length - 1]['title']);
+                _mainPageKey.currentState!.setState(() {});
               }
             }
           }
-          if(courseNumber < courseList.length) {
-            await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/' + courseList[courseNumber++].substring(0, 14) + '_query');
-          } else if(courseNumber == courseList.length){
-            courseNumber = 0;
-            await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/' + courseList[courseNumber++].substring(0, 14) + '_report');
+          if(loadingCourseNumber < courseList.length - 2) {
+            for(int i = loadingCourseNumber + 1; i < courseList.length; i++){
+              if(courseList[i]['isHomework'] == 'true'){
+                loadingCourseNumber = i;
+                await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseList[i]['ID']! + '_query');
+                break;
+              }
+            }
+          } else {
+            loadingCourseNumber = 0;
+            await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseList[loadingCourseNumber]['ID']! + '_report');
           }
         }
+
         //レポートページ時
         if(url?.contains('report') == true){
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
-          if(html != null){
+          if(html != 'null'){
+            print(loadingCourseNumber);
             print('html-----' + html);
             final a = html.split(r'\u003Ctr onmouseover');
             for(int i = 1; i < a.length; i++){
-              if(a[i].contains('deadline')){
+              if(a[i].contains('受付中') && a[i].contains('未提出')){
                 print('aiueo');
-                reportData.add(a[i].split(r'\u003Ca')[1]);
-                print(a[i].split(r'\u003Ca')[1]);
+                final b = a[i].split(r'\u003Ca href=\"')[1].split(r'\">');
+                reportData.add({
+                  'ID' : b[0],
+                  'courseID' : courseList[loadingCourseNumber]['ID']!,
+                  'title' : b[1].split(r'\u003C')[0],
+                  'deadline' : a[i].split(r'center\">')[4].split(r'\u003C')[0],
+                });
+                debugPrint(reportData[reportData.length - 1]['title']);
+                _mainPageKey.currentState!.setState(() {});
               }
             }
           }
-          if(courseNumber < courseList.length) {
-            await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/' + courseList[courseNumber++].substring(0, 14) + '_report');
-          } else if(courseNumber == courseList.length) {
+          if(loadingCourseNumber < courseList.length - 1) {
+            for(int i = loadingCourseNumber + 1; i < courseList.length; i++){
+              if(courseList[i]['isHomework'] == 'true'){
+                loadingCourseNumber = i;
+                await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseList[i]['ID']! + '_report');
+                break;
+              }
+            }
+          } else if(loadingCourseNumber == courseList.length - 1) {
             for (var query in queryData) {
-              print(query.substring(0, 60));
+              print(query['title']);
             }
             for (var report in reportData) {
-              print(report.substring(0, 60));
+              print(report['title']);
             }
-            _key.currentState!.setState(() {});
-            courseNumber = 0;
-            //Navigator.push(context, MaterialPageRoute(builder: (context) => const MainPage()));
+
+            _mainPageKey.currentState!.setState(() {});
+            loadingCourseNumber = 0;
           }
         }
-        setState(() {
-
-        });
       },
     );
+  }
+
+  Future<void> updateData() async {
+    final controller = await _controller.future;
+    await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+    debugPrint('update');
   }
 }

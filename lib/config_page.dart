@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class configPage extends StatefulWidget {
-  const configPage({Key? key}) : super(key: key);
+class ConfigPage extends StatefulWidget {
+  const ConfigPage({Key? key}) : super(key: key);
 
   @override
-  _configPageState createState() => _configPageState();
+  _ConfigPageState createState() => _ConfigPageState();
 }
 
-class _configPageState extends State<configPage> {
+class _ConfigPageState extends State<ConfigPage> {
 
   final TextEditingController _userIdController = TextEditingController();
   final TextEditingController _userPassController = TextEditingController();
@@ -21,7 +21,7 @@ class _configPageState extends State<configPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('ID', style: const TextStyle(fontSize: 15.0)),
+              const Text('ID', style: TextStyle(fontSize: 15.0)),
               const SizedBox(height: 10.0),
               TextField(
                 controller: _userIdController,
@@ -55,12 +55,28 @@ class _configPageState extends State<configPage> {
               const SizedBox(height: 50.0,),
               ElevatedButton(
                 onPressed: () async {
-                  if(_userIdController.text != '' && _userPassController != ''){
-                    final storage = FlutterSecureStorage();
+                  if(_userIdController.text != ''&& _userPassController.text != ''){
+                    const storage = FlutterSecureStorage();
                     await storage.write(key: 'ID', value: _userIdController.text);
                     await storage.write(key: 'PASSWORD', value: _userPassController.text);
+                    Navigator.pop(context);
+                  } else {
+                    showDialog(
+                        context: context,
+                        builder: (_) {
+                          return AlertDialog(
+                            title: const Text('入力してない項目があります。'),
+                            content: const Text('IDとパスワードを入力してください。'),
+                            actions: <Widget>[
+                              TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('戻る'),
+                              )
+                            ],
+                          );
+                        }
+                        );
                   }
-                  Navigator.pop(context);
                 },
                 child: const SizedBox(
                   width: 80,
