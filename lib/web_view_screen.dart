@@ -23,8 +23,10 @@ class WebViewScreen extends StatefulWidget {
 }
 
 class _WebViewScreenState extends State<WebViewScreen> {
-  final Completer<WebViewController> _controller = Completer<WebViewController>();
-  FlutterSecureStorage storage = const FlutterSecureStorage();
+
+  final Completer<WebViewController> webController = Completer<WebViewController>();
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
+  final dataSink = ManageDataStream.getStreamSink();
   int loadingCourseNumber = 0;
 
   @override
@@ -32,7 +34,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     super.initState();
 
     if (Platform.isAndroid) {
-      WebView.platform = SurfaceAndroidWebView();
+      WebView.platform = AndroidWebView();
     }
   }
 
@@ -62,14 +64,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
       // jsを有効化
       javascriptMode: JavascriptMode.unrestricted,
       // controllerを登録
-      onWebViewCreated: _controller.complete,
+      onWebViewCreated: webController.complete,
       // ページの読み込み開始
       onPageStarted: (String url) {},
       // ページ読み込み終了
       onPageFinished: (String url) async {
 
         // ページタイトル取得
-        final controller = await _controller.future;
+        final controller = await webController.future;
         mainController = controller;
         String? title = await controller.getTitle();
 
@@ -81,14 +83,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
           await controller.runJavascript('document.getElementsByName("PASSWORD")[0].value="' + passWord + '";');
           await controller.runJavascript('document.getElementById("Submit").click();');
         }
-        final url = await controller.currentUrl();
 
-        //サインイン成功時
+        //サインイン成功時、ホーム表示時
         if(url == 'https://ct.ritsumei.ac.jp/ct/home_course') {
           courseList.clear();
           queryData.clear();
           reportData.clear();
           loadingCourseNumber = 0;
+          _mainPageKey.currentState!.setState(() {});
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
           print("html---" + html);
           if (html != 'null') {
@@ -108,7 +110,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
               });
             }
             for(Map course in courseList){
-              print('b' + course['title']);
+              print(course);
             }
             if(courseList.isNotEmpty) {
                 await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseList[0]['ID']! + '_query');
@@ -118,7 +120,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         }
 
         //小テストページ時
-        if(url?.contains('query') == true){
+        if(url.contains('query') && !url.contains('query_')){
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
           if(html != 'null'){
             print('html-----' + html);
@@ -128,7 +130,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 print('aiueo');
                 final b = a[i].split(r'\u003Ca href=\"')[1].split(r'\">');
                 queryData.add({
-                  'ID' : b[0],
+                  'ID' : b[0].split('query_')[1],
                   'courseID' : courseList[loadingCourseNumber]['ID']!,
                   'title' : b[1].split(r'\u003C')[0],
                   'deadline' : a[i].split(r'center\">')[3].split(r'\u003C')[0],
@@ -157,7 +159,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         }
 
         //レポートページ時
-        if(url?.contains('report') == true){
+        if(url.contains('report') && !url.contains('report_')){
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
           if(html != 'null'){
             print(loadingCourseNumber);
@@ -168,7 +170,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 print('aiueo');
                 final b = a[i].split(r'\u003Ca href=\"')[1].split(r'\">');
                 reportData.add({
-                  'ID' : b[0],
+                  'ID' : b[0].split('report_')[1],
                   'courseID' : courseList[loadingCourseNumber]['ID']!,
                   'title' : b[1].split(r'\u003C')[0],
                   'deadline' : a[i].split(r'center\">')[4].split(r'\u003C')[0],
@@ -198,13 +200,46 @@ class _WebViewScreenState extends State<WebViewScreen> {
             loadingCourseNumber = 0;
           }
         }
+
+        if(url.contains('query_')){
+          final queryID = url.split('query_')[1];
+          final html = await controller.runJavascriptReturningResult("window.document.querySelector('.contentbody-s').innerHTML;");
+          queryData.forEach((query) {
+            if(query['ID'] == queryID){
+              query['detail'] = html.split(r'word-break\">')[1].split(r'\u003C')[0];
+              ManageDataStream.getStreamSink().add(query['detail']);
+            }
+          });
+        }
+
+        if(url.contains('report_')){
+          final queryID = url.split('report_')[1];
+          final html = await controller.runJavascriptReturningResult("window.document.querySelector('.contentbody-l').innerHTML;");
+          final detail = html.split(r'left\">')[1].split(r'\u003C/td')[0];
+          reportData.forEach((report) {
+            if(report['ID'] == queryID){
+              report['detail'] = detail;
+              ManageDataStream.getStreamSink().add(report['detail']);
+            }
+          });
+          dataSink.add(detail);
+        }
+
       },
     );
   }
 
-  Future<void> updateData() async {
-    final controller = await _controller.future;
-    await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
-    debugPrint('update');
+}
+
+class ManageDataStream {
+  static StreamController onDataChange = StreamController<String>();
+
+  static Stream getStream(){
+    onDataChange = StreamController<String>();
+    return onDataChange.stream;
+  }
+
+  static StreamSink getStreamSink(){
+    return onDataChange.sink;
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:untitled1/query_detail_page.dart';
+import 'package:untitled1/report_detail_page.dart';
 import 'package:untitled1/web_view_screen.dart';
 
 import 'config_page.dart';
@@ -51,7 +53,12 @@ class _MainPageState extends State<MainPage> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(5.0),
-                          child: Text(queryData[index]['title']!),
+                          child: TextButton(
+                              onPressed: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => QueryDetailPage(queryData: queryData[index]),));
+                              },
+                              child: Text(queryData[index]['title']!),
+                          ),
                         ),
                         Container(
                           padding: const EdgeInsets.all(5.0),
@@ -75,7 +82,12 @@ class _MainPageState extends State<MainPage> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(5.0),
-                        child: Text(reportData[index]['title']!),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailPage(reportData: reportData[index]),));
+                          },
+                          child: Text(reportData[index]['title']!),
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.all(5.0),
