@@ -29,7 +29,7 @@ class _QueryDetailPageState extends State<QueryDetailPage> {
                 title: Text(widget.queryData['title']!),
               ),
               (widget.queryData['detail'] == null) ? StreamBuilder(
-                stream: ManageDataStream.getStream(),
+                stream: ManageDataStream.getReportQueryDetailStream(),
                 builder: (context, snapshot) {
                   if (snapshot.data != null) {
                     debugPrint('stream!!');

@@ -1,14 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:untitled1/news_list_page.dart';
+import 'package:untitled1/timetable_page.dart';
 import 'package:untitled1/query_detail_page.dart';
+import 'package:untitled1/report_and_query_page.dart';
 import 'package:untitled1/report_detail_page.dart';
 import 'package:untitled1/web_view_screen.dart';
 
 import 'config_page.dart';
 
 class MainPage extends StatefulWidget {
-  GlobalKey<State<WebViewScreen>> webViewScreenKey;
-  MainPage({Key? key, required this.webViewScreenKey}) : super(key: key);
+
+  const MainPage({Key? key}) : super(key: key);
 
   @override
   _MainPageState createState() => _MainPageState();
@@ -16,91 +19,43 @@ class MainPage extends StatefulWidget {
 
 
 class _MainPageState extends State<MainPage> {
+
+  final GlobalKey<State<ReportAndQueryPage>> reportAndQueryPageKey = GlobalKey<State<ReportAndQueryPage>>();
+  final GlobalKey<State<TimetablePage>> timetablePageKey = GlobalKey<State<TimetablePage>>();
+
+  late final _screens = [
+    ReportAndQueryPage(key: reportAndQueryPageKey,),
+    TimetablePage(key: timetablePageKey,),
+    const NewsListPage(),
+  ];
+
+  int _selectedIndex = 0;
+
+  void _onIconTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  void update() {
+    reportAndQueryPageKey.currentState?.setState(() {});
+    timetablePageKey.currentState?.setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final _webViewScreenKey = widget.webViewScreenKey;
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('レポート＆小テスト'),
-          actions: [
-            IconButton(
-                onPressed: () async {
-                  mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
-                },
-                icon: const Icon(Icons.update),
-            )
-          ],
-        ),
-        endDrawer: const SizedBox(
-          width: double.infinity,
-          child: Drawer(
-            child: ConfigPage(),
-          ),
-        ),
-        body: Column(
-          children: [
-            const ListTile(
-              title: Text('小テスト'),
-            ),
-            Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: queryData.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(5.0),
-                          child: TextButton(
-                              onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => QueryDetailPage(queryData: queryData[index]),));
-                              },
-                              child: Text(queryData[index]['title']!),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Text(queryData[index]['deadline']!),
-                        ),
-                      ],
-                    );
-                  },
-              ),
-            ),
-            const ListTile(
-              title: Text('レポート'),
-            ),
-            Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: reportData.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(5.0),
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailPage(reportData: reportData[index]),));
-                          },
-                          child: Text(reportData[index]['title']!),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(5.0),
-                        child: Text(reportData[index]['deadline']!),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
-
-        ),
+    update();
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex:  _selectedIndex,
+        onTap: _onIconTapped,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home_work_outlined), label: 'レポート＆小テスト'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), label: 'コース一覧'),
+          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'お知らせ'),
+        ],
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
