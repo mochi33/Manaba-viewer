@@ -50,7 +50,7 @@ class HtmlFunction {
         b += a[i];
       }
     }
-    return b;
+    return b.replaceAll(r'\n', '');
 
   }
 

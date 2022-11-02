@@ -26,6 +26,15 @@ class _NewsListPageState extends State<NewsListPage> {
         child: Scaffold(
           appBar: AppBar(
             title: const Text('お知らせ'),
+            actions: [
+              IconButton(
+                onPressed: () async {
+                  _getData();
+                  setState(() {});
+                },
+                icon: const Icon(Icons.update),
+              )
+            ],
           ),
           body: SingleChildScrollView(
             scrollDirection: Axis.vertical,
@@ -54,13 +63,16 @@ class _NewsListPageState extends State<NewsListPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                const Divider(color: Colors.black26,),
                                 TextButton(
                                   onPressed: () {
                                     Navigator.push(context, MaterialPageRoute(builder: (context) => CourseNewsDetailPage(courseNewsData: ManabaData.courseNewsList[index])),);
                                   },
                                   child: Text(ManabaData.courseNewsList[index]['title'] ?? ''),
                                 ),
-                                Text(ManabaData.courseNewsList[index]['courseInfo'] ?? '')
+                                Text(ManabaData.courseNewsList[index]['courseInfo'] ?? ''),
+                                const SizedBox(height: 3,),
+                                Text(ManabaData.courseNewsList[index]['date'] ?? '')
                               ],
                             ),
                           );

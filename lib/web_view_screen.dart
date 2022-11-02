@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:untitled1/manaba_data.dart';
+import 'package:untitled1/manage.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'main_page.dart';
@@ -111,6 +112,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     'period' : courseInfo[1],
                     'place' : courseInfo.split(r':')[1].split(r'\"')[0],
                   };
+                  ManageDataStream.getCourseListStreamSink().add(courseCell['ID']);
                   debugPrint(courseCell['ID']);
                   debugPrint(courseCell['title']);
                   debugPrint(courseCell['isHomework']);
@@ -310,7 +312,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   'ID' : info.split('news_')[1].split(r'\"')[0],
                   'courseID' : info.split('_news')[0],
                   'title' : info.split(r'title=\"')[1].split(r'\"')[0],
-                  'date' : news.split('width=')[1].split(r'\">')[1].split(r'\u003C')[0],
+                  'date' : news.split('width=')[1].split(r'\">')[1].split(r'\u003C')[0].replaceAll(r'\n', '').trimLeft(),
                   'isRead' : news.contains('unread') ? 'false' : 'true',
                   'courseInfo' : news.split('news-courseinfo')[1].split(r'title=\"')[1].split(r'\"')[0],
                 }
@@ -331,6 +333,7 @@ class ManageDataStream {
   static StreamController onCourseDataChange = StreamController<String>();
   static StreamController onCourseNewsListChange = StreamController<String>();
   static StreamController onCourseNewsDetailDataChange = StreamController<String>();
+  static StreamController onCourseListChange = StreamController<String>();
 
   static Stream getReportQueryStream(){
     onReportQueryDataChange = StreamController<String>();
@@ -375,6 +378,15 @@ class ManageDataStream {
 
   static StreamSink getCourseNewsListStreamSink(){
     return onCourseNewsListChange.sink;
+  }
+
+  static Stream getCourseListStream(){
+    onCourseListChange = StreamController<String>();
+    return onCourseListChange.stream;
+  }
+
+  static StreamSink getCourseListStreamSink(){
+    return onCourseListChange.sink;
   }
 }
 
