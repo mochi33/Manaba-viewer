@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:untitled1/web_view_screen.dart';
+
+import 'manaba_data.dart';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({Key? key}) : super(key: key);
@@ -57,6 +60,11 @@ class _ConfigPageState extends State<ConfigPage> {
                 onPressed: () async {
                   if(_userIdController.text != ''&& _userPassController.text != ''){
                     const storage = FlutterSecureStorage();
+                    final oldId = await storage.read(key: 'ID');
+                    if(oldId != _userIdController.text) {
+                      debugPrint("change");
+                      ManabaData.isUserChanged = true;
+                    }
                     await storage.write(key: 'ID', value: _userIdController.text);
                     await storage.write(key: 'PASSWORD', value: _userPassController.text);
                     Navigator.pop(context);

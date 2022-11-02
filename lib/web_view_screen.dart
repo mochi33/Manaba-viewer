@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:core';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:untitled1/manaba_data.dart';
@@ -26,6 +27,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
   final Completer<WebViewController> webController = Completer<WebViewController>();
   final FlutterSecureStorage storage = const FlutterSecureStorage();
   final dataSink = ManageDataStream.getReportQueryDetailStreamSink();
+  final cookieManager = CookieManager();
   int loadingCourseNumber = 0;
 
   @override
@@ -65,7 +67,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
       // controllerを登録
       onWebViewCreated: webController.complete,
       // ページの読み込み開始
-      onPageStarted: (String url) {},
+      onPageStarted: (String url) {
+
+      },
       // ページ読み込み終了
       onPageFinished: (String url) async {
 
@@ -73,6 +77,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
         final controller = await webController.future;
         mainController = controller;
         String? title = await controller.getTitle();
+
+        if(ManabaData.isUserChanged) {
+          debugPrint('cookieClear');
+          await cookieManager.clearCookies();
+          await mainController?.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+          ManabaData.isUserChanged = false;
+        }
 
         //サインインページ表示時
         if(title?.contains('Web Single Sign On') == true) {
@@ -85,6 +96,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         //サインイン成功時、ホーム表示時
         if(url == 'https://ct.ritsumei.ac.jp/ct/home_course') {
+          debugPrint('LogInSuccess!');
           ManabaData.courseList.clear();
           ManabaData.queryData.clear();
           ManabaData.reportData.clear();
