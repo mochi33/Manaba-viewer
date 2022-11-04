@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:untitled1/WebViewInfo.dart';
+
+import 'device_info.dart';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({Key? key}) : super(key: key);
@@ -57,6 +60,10 @@ class _ConfigPageState extends State<ConfigPage> {
                 onPressed: () async {
                   if(_userIdController.text != ''&& _userPassController.text != ''){
                     const storage = FlutterSecureStorage();
+                    final _oldId = await storage.read(key: 'ID');
+                    if (_oldId != _userIdController.text) {
+                      AppInfo.isUserChanged = true;
+                    }
                     await storage.write(key: 'ID', value: _userIdController.text);
                     await storage.write(key: 'PASSWORD', value: _userPassController.text);
                     Navigator.pop(context);

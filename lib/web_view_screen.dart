@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:untitled1/WebViewInfo.dart';
+import 'package:untitled1/device_info.dart';
 import 'package:untitled1/manaba_data.dart';
 import 'package:untitled1/manage.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -26,7 +28,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   final Completer<WebViewController> webController = Completer<WebViewController>();
   final FlutterSecureStorage storage = const FlutterSecureStorage();
-  final dataSink = ManageDataStream.getReportQueryDetailStreamSink();
+  final _cookieManager = CookieManager();
   int loadingCourseNumber = 0;
 
   @override
@@ -57,7 +59,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
   }
 
   Widget _buildWebView() {
-    final _mainPageKey = widget.mainPageKey;
 
     return WebView(
       initialUrl: 'https://ct.ritsumei.ac.jp/ct/home_course',
@@ -66,7 +67,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
       // controllerを登録
       onWebViewCreated: webController.complete,
       // ページの読み込み開始
-      onPageStarted: (String url) {},
+      onPageStarted: (String url) {
+        AppInfo.isLoading = true;
+        ManageDataStream.getWebViewPageStateStreamSink().add('true');
+      },
       // ページ読み込み終了
       onPageFinished: (String url) async {
 
@@ -75,8 +79,15 @@ class _WebViewScreenState extends State<WebViewScreen> {
         mainController = controller;
         String? title = await controller.getTitle();
 
+        if(AppInfo.isUserChanged) {
+          _cookieManager.clearCookies();
+          mainController?.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+          AppInfo.isUserChanged = false;
+        }
+
         //サインインページ表示時
         if(title?.contains('Web Single Sign On') == true) {
+          AppInfo.pageType = PageType.signIn;
           String userID = await storage.read(key: 'ID') ?? '';
           String passWord = await storage.read(key: 'PASSWORD') ?? '';
           await controller.runJavascript('document.getElementsByName("USER")[0].value="' + userID + '";');
@@ -86,11 +97,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         //サインイン成功時、ホーム表示時
         if(url == 'https://ct.ritsumei.ac.jp/ct/home_course') {
+          AppInfo.pageType = PageType.home;
           ManabaData.courseList.clear();
           ManabaData.queryData.clear();
           ManabaData.reportData.clear();
           loadingCourseNumber = 0;
-          _mainPageKey.currentState?.setState(() {});
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
           if (html != 'null') {
             debugPrint(html);
@@ -143,6 +154,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         //小テストページ時
         if(url.contains('query') && !url.contains('query_')){
+          AppInfo.pageType = PageType.queryList;
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
           if(html != 'null'){
             print('html-----' + html);
@@ -182,6 +194,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         //レポートページ時
         if(url.contains('report') && !url.contains('report_')){
+          AppInfo.pageType = PageType.reportList;
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.stdlist').innerHTML;");
           if(html != 'null'){
             print(loadingCourseNumber);
@@ -225,6 +238,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         //小テスト詳細ページ
         if(url.contains('query_')){
+          AppInfo.pageType = PageType.queryDetail;
           final queryID = url.split('query_')[1];
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.contentbody-s').innerHTML;");
           ManabaData.queryData.forEach((query) {
@@ -237,6 +251,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         //レポート詳細ページ
         if (url.contains('report_')){
+          AppInfo.pageType = PageType.reportDetail;
           final queryID = url.split('report_')[1];
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.contentbody-l').innerHTML;");
           final detail = html.split(r'left\">')[1].split(r'\u003C/td')[0];
@@ -246,11 +261,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
               ManageDataStream.getReportQueryDetailStreamSink().add(report['detail']);
             }
           });
-          dataSink.add(detail);
         }
 
         //コース詳細ページ
-        if (url.contains('course_') && !url.contains('report') && !url.contains('query')) {
+        if (url.contains('course_') && !url.contains('report') && !url.contains('query') && !url.contains('news')) {
+          AppInfo.pageType = PageType.courseDetail;
           final courseID = url.split('course_')[1];
           debugPrint(courseID);
           ManabaData.courseNewsList.removeWhere((map) {if(map['courseID'] == courseID) {
@@ -285,6 +300,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         //コースニュース詳細ページ
         if (url.contains('news_')) {
+          AppInfo.pageType = PageType.courseNewsDetail;
           final courseNewsID = url.split('news_')[1];
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.msg-text').innerHTML;");
           for(var courseNews in ManabaData.courseNewsList) {
@@ -298,6 +314,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
         //コースニュースリストページ
         if (url.contains('home_coursenews_')) {
+          AppInfo.pageType = PageType.courseNewsList;
           print(1);
           ManabaData.courseNewsList.clear();
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.groupthreadlist').innerHTML;");
@@ -321,6 +338,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
             }
           }
         }
+
+        AppInfo.isLoading = false;
+        ManageDataStream.getWebViewPageStateStreamSink().add('false');
       },
     );
   }
@@ -334,6 +354,7 @@ class ManageDataStream {
   static StreamController onCourseNewsListChange = StreamController<String>();
   static StreamController onCourseNewsDetailDataChange = StreamController<String>();
   static StreamController onCourseListChange = StreamController<String>();
+  static StreamController onWebViewPageStateChage = StreamController<Stream>();
 
   static Stream getReportQueryStream(){
     onReportQueryDataChange = StreamController<String>();
@@ -387,6 +408,15 @@ class ManageDataStream {
 
   static StreamSink getCourseListStreamSink(){
     return onCourseListChange.sink;
+  }
+
+  static Stream getWebViewPageStateStream(){
+    onWebViewPageStateChage = StreamController<String>();
+    return onWebViewPageStateChage.stream;
+  }
+
+  static StreamSink getWebViewPageStateStreamSink(){
+    return onWebViewPageStateChage.sink;
   }
 }
 
