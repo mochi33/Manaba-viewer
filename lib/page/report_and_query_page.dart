@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:untitled1/WebViewInfo.dart';
+import 'package:untitled1/device_info.dart';
 import 'package:untitled1/manaba_data.dart';
-import 'package:untitled1/query_detail_page.dart';
-import 'package:untitled1/report_detail_page.dart';
-import 'package:untitled1/web_view_screen.dart';
+import 'package:untitled1/page/query_detail_page.dart';
+import 'package:untitled1/page/report_detail_page.dart';
+import 'package:untitled1/page/rotating_update_button.dart';
+import 'package:untitled1/page/webview/web_view_screen.dart';
 import 'config_page.dart';
 
 class ReportAndQueryPage extends StatefulWidget {
@@ -19,35 +20,24 @@ class ReportAndQueryPage extends StatefulWidget {
 
 class _ReportAndQueryPageState extends State<ReportAndQueryPage> {
 
-  double _rotateUpdateIcon = 0;
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('レポート＆小テスト'),
-          actions: [
-            IconButton(
-              onPressed: () async {
-                mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
-                setState(() {});
-              },
-              icon: StreamBuilder(
-                stream: ManageDataStream.getWebViewPageStateStream(),
-                builder: (context, snapshot) {
-                  if (AppInfo.isLoading) {
-                    Timer.periodic(const Duration(milliseconds: 50), (timer) {_rotateUpdateIcon += 1; setState(() {});});
-                    return Transform.rotate(
-                      angle: _rotateUpdateIcon * pi / 180,
-                      child: const Icon(Icons.update),
-                    );
-                  }
-                  return const Icon(Icons.update);
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(DeviceInfo.deviceHeight * 0.07),
+          child: AppBar(
+            title: const Text('レポート＆小テスト'),
+            actions: [
+              IconButton(
+                onPressed: () async {
+                  mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+                  setState(() {});
                 },
-              ),
-            )
-          ],
+                icon: const RotatingUpdateButton(),
+              )
+            ],
+          ),
         ),
         endDrawer: const SizedBox(
           width: double.infinity,

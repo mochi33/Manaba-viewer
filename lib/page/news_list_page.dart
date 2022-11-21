@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:untitled1/device_info.dart';
 import 'package:untitled1/manaba_data.dart';
-import 'package:untitled1/web_view_screen.dart';
+import 'package:untitled1/page/rotating_update_button.dart';
+import 'package:untitled1/page/webview/web_view_screen.dart';
 
 import 'course_news_detail_page.dart';
 
@@ -24,17 +26,20 @@ class _NewsListPageState extends State<NewsListPage> {
   Widget build(BuildContext context) {
     return SafeArea(
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text('お知らせ'),
-            actions: [
-              IconButton(
-                onPressed: () async {
-                  _getData();
-                  setState(() {});
-                },
-                icon: const Icon(Icons.update),
-              )
-            ],
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(DeviceInfo.deviceHeight * 0.07),
+            child: AppBar(
+              title: const Text('お知らせ'),
+              actions: [
+                IconButton(
+                  onPressed: () async {
+                    _getData();
+                    setState(() {});
+                  },
+                  icon: const RotatingUpdateButton(),
+                )
+              ],
+            ),
           ),
           body: SingleChildScrollView(
             scrollDirection: Axis.vertical,

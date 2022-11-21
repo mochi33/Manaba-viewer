@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:untitled1/WebViewInfo.dart';
 
-import 'device_info.dart';
+import '../device_info.dart';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({Key? key}) : super(key: key);

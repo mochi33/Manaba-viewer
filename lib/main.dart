@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:untitled1/device_info.dart';
-import 'package:untitled1/manage.dart';
-import 'package:untitled1/web_view_screen.dart';
+import 'package:untitled1/page/manage.dart';
+import 'package:untitled1/page/webview/web_view_screen.dart';
 
 void main() async {
   runApp(const MyApp());

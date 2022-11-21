@@ -1,12 +1,10 @@
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:untitled1/manaba_data.dart';
-import 'package:untitled1/web_view_screen.dart';
-import 'package:untitled1/web_view_screen2.dart';
+import 'package:untitled1/page/webview/web_view_screen.dart';
+import 'package:untitled1/page/webview/web_view_screen2.dart';
 
-import 'html_function.dart';
+import '../html_function.dart';
 
 class CourseNewsDetailPage extends StatefulWidget {
 

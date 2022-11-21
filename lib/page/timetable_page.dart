@@ -1,11 +1,9 @@
-import 'dart:ffi';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:untitled1/course_detail_page.dart';
+import 'package:untitled1/page/course_detail_page.dart';
 import 'package:untitled1/device_info.dart';
 import 'package:untitled1/manaba_data.dart';
-import 'package:untitled1/web_view_screen.dart';
+import 'package:untitled1/page/rotating_update_button.dart';
+import 'package:untitled1/page/webview/web_view_screen.dart';
 
 class TimetablePage extends StatefulWidget {
   const TimetablePage({Key? key}) : super(key: key);
@@ -32,17 +30,20 @@ class _TimetablePageState extends State<TimetablePage> {
   Widget build(BuildContext context) {
     return SafeArea(
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text("コース時間割"),
-            actions: [
-              IconButton(
-                onPressed: () async {
-                  mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
-                  setState(() {});
-                },
-                icon: const Icon(Icons.update),
-              )
-            ],
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(DeviceInfo.deviceHeight * 0.07),
+            child: AppBar(
+              title: const Text("コース時間割"),
+              actions: [
+                IconButton(
+                  onPressed: () async {
+                    mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+                    setState(() {});
+                  },
+                  icon: const RotatingUpdateButton(),
+                )
+              ],
+            ),
           ),
           body: Container(
             child: StreamBuilder(

@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:untitled1/main.dart';
-import 'package:untitled1/report_and_query_page.dart';
-import 'package:untitled1/web_view_screen.dart';
+import 'package:untitled1/page/report_and_query_page.dart';
+import 'package:untitled1/page/webview/web_view_screen.dart';
 
 import 'main_page.dart';
 
