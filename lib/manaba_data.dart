@@ -5,4 +5,5 @@ class ManabaData {
   static List<Map<String, String>> queryData = [];
   static List<Map<String, String>> courseNewsList = [];
   static List<Map<String, String>> contentsList = [];
+  static List<Map<String, String>> contentsDetailList = [];
 }

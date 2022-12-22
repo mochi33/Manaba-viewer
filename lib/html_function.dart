@@ -1,3 +1,5 @@
+import 'dart:core';
+
 class HtmlFunction {
 
   static const leftArrow = r'\u003C';
@@ -74,6 +76,39 @@ class HtmlFunction {
     }
     else {
       return a[0];
+    }
+  }
+
+  static String? parseString(String string, String? firstWord, String? lastWord) {
+    if(firstWord != null) {
+      final firstParsedList = string.split(firstWord);
+      if (firstParsedList.length > 1) {
+        final firstParsedString = firstParsedList[1];
+        if(lastWord != null) {
+          final secondParsedList = firstParsedString.split(lastWord);
+          if (secondParsedList.length > 1) {
+            final secondParsedString = secondParsedList[0];
+            return secondParsedString;
+          } else {
+            return null;
+          }
+        } else {
+          return firstParsedString;
+        }
+      } else {
+        return null;
+      }
+    } else {
+      if (lastWord != null) {
+        final parsedList = string.split(lastWord);
+        if(parsedList.length > 1) {
+          return parsedList[0];
+        } else {
+          return null;
+        }
+      } else {
+        return string;
+      }
     }
   }
 }

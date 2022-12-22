@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:core';
+import 'dart:html';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:untitled1/WebViewInfo.dart';
 import 'package:untitled1/device_info.dart';
+import 'package:untitled1/html_function.dart';
 import 'package:untitled1/manaba_data.dart';
 import 'package:untitled1/page/manage.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -362,10 +364,49 @@ class _WebViewScreenState extends State<WebViewScreen> {
           }
         }
 
+        //コンテンツ詳細ページ
         if (url.contains('page_')){
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.contentbody-left').innerHTML;");
+          final contentTitle = await controller.runJavascriptReturningResult("window.document.querySelector('.contentsheader h1.contests').innerHTML;");
+          final pageTitle = await controller.runJavascriptReturningResult("window.document.querySelector('.pagetitle').innerHTML;");
+          final articleText = await controller.runJavascriptReturningResult("window.document.querySelector('.articletext').innerHTML;");
+          final contentsListString = await controller.runJavascriptReturningResult("window.document.querySelector('.contentslist').innerHTML;");
           if (html != 'null') {
-            final article = html.split(r'articletext')[1];
+
+          }
+          if (contentsListString != 'null') {
+            final contentsList = contentsListString.split('GRI').sublist(1);
+            final Id = url.split('page_')[1].split('c')[0];
+            bool isFirstContent = true;
+            for (final content in ManabaData.contentsList) {
+              if (content['ID'] == Id) {
+                isFirstContent = false;
+              }
+            }
+            if (isFirstContent) {
+              ManabaData.contentsList.add({
+                'ID' : Id,
+                'courseID' : url.split('page_')[1].split('c')[1].split('_')[0],
+                'title' : contentTitle.split(r'\">')[1].split(r'\<')[0],
+                'length' : contentsList.length.toString(),
+              });
+            }
+            for (final contentDetail in contentsList) {
+              String contentDetailId = '';
+              bool isTopPage;
+              if (url.split('page_')[1].contains('_')) {
+                contentDetailId = url.split('page_')[1].split('_')[1];
+              } else {
+                contentDetailId = HtmlFunction.parseString(contentDetail, r'\"page_', r'c') ?? '';
+
+              }
+              contentDetail.startsWith(r'unread');
+              ManabaData.contentsDetailList.add({
+                'ID' : contentDetailId,
+                'ContentID' : ,
+                'is'
+              });
+            }
           }
         }
 

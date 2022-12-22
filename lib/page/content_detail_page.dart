@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:untitled1/page/webview/web_view_screen.dart';
 
 class ContentDetailPage extends StatefulWidget {
 
@@ -37,11 +38,11 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
                     }
                   },
                 ) : ListTile(
-                  title: Text(widget.reportData['detail']),
+                  title: Text(widget.contentData['detail'] ?? ''),
                 ),
               ],
             ),
-          ),,
+          ),
         )
     );
   }
