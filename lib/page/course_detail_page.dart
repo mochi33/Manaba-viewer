@@ -8,6 +8,8 @@ import 'package:untitled1/page/query_detail_page.dart';
 import 'package:untitled1/page/report_detail_page.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
 
+import 'content_detail_page.dart';
+
 class CourseDetailPage extends StatefulWidget {
 
   Map<String, String> courseData;
@@ -251,7 +253,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                             children: [
                                               TextButton(
                                                 onPressed: () {
-                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailPage(reportData: courseReportList[index])),);
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => ContentDetailPage(contentData: courseContentsList[index], isTopPage: true,)),);
                                                 },
                                                 child: Text(courseContentsList[index]['title'] ?? ''),
                                               ),

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:core';
-import 'dart:html';
+//import 'dart:html';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -283,26 +283,28 @@ class _WebViewScreenState extends State<WebViewScreen> {
           } else{return false;}});
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.info-list-card-body').innerHTML;");
           if (html != 'null') {
-            final tbody = html.split('tbody')[1];
-            final courseNewsList = tbody.split(r'\u003Ctr>').sublist(1);
-            for (var courseNews in courseNewsList) {
-              final _info = courseNews.split(courseID + '_news_')[1];
-              final _newsID = _info.split(r'\"')[0];
-              final _title = _info.split(r'\">')[1].split(r'\u003C/a>')[0];
-              final _courseNewsInfo = {
-                'ID' : _newsID,
-                'courseID' : courseID,
-                'title' : _title,
-                'date' : _info.split(r'news-date\">')[1].split(r'\u003C/td>')[0],
-                'isRead' : courseNews.contains('unread') ? 'false' : 'true',
-              };
-              debugPrint(_courseNewsInfo['ID']);
-              debugPrint(_courseNewsInfo['courseID']);
-              debugPrint(_courseNewsInfo['title']);
-              debugPrint(_courseNewsInfo['date']);
-              debugPrint(_courseNewsInfo['isRead']);
-              ManabaData.courseNewsList.add(_courseNewsInfo);
-              ManageDataStream.getCourseStreamSink().add(courseID);
+            final tbody = HtmlFunction.parseString(html, 'tbody', null);
+            if (tbody != null) {
+              final courseNewsList = tbody.split(r'\u003Ctr>').sublist(1);
+              for (var courseNews in courseNewsList) {
+                final _info = courseNews.split(courseID + '_news_')[1];
+                final _newsID = _info.split(r'\"')[0];
+                final _title = _info.split(r'\">')[1].split(r'\u003C/a>')[0];
+                final _courseNewsInfo = {
+                  'ID' : _newsID,
+                  'courseID' : courseID,
+                  'title' : _title,
+                  'date' : _info.split(r'news-date\">')[1].split(r'\u003C/td>')[0],
+                  'isRead' : courseNews.contains('unread') ? 'false' : 'true',
+                };
+                debugPrint(_courseNewsInfo['ID']);
+                debugPrint(_courseNewsInfo['courseID']);
+                debugPrint(_courseNewsInfo['title']);
+                debugPrint(_courseNewsInfo['date']);
+                debugPrint(_courseNewsInfo['isRead']);
+                ManabaData.courseNewsList.add(_courseNewsInfo);
+                ManageDataStream.getCourseStreamSink().add(courseID);
+              }
             }
           }
           final contentHtml = await controller.runJavascriptReturningResult("window.document.querySelector('.top-contents-list-body').innerHTML;");
@@ -312,11 +314,12 @@ class _WebViewScreenState extends State<WebViewScreen> {
               final info = content.split(r'href=\"page_')[1];
               final info2 = info.split(r'\">');
               final _contentInfo = {
-                'ID' : info2[0],
+                'ID' : info2[0].split('c')[0],
                 'courseID' : courseID,
                 'title' : info2[1].split(r'\u003C/')[0],
                 'date' : info.split(r'span>')[1].split(r'\u003C/')[0],
               };
+              print('contentInfo' + _contentInfo.toString());
               ManabaData.contentsList.add(_contentInfo);
               ManageDataStream.getCourse2StreamSink().add(_contentInfo['ID']);
             }
@@ -369,44 +372,60 @@ class _WebViewScreenState extends State<WebViewScreen> {
           final html = await controller.runJavascriptReturningResult("window.document.querySelector('.contentbody-left').innerHTML;");
           final contentTitle = await controller.runJavascriptReturningResult("window.document.querySelector('.contentsheader h1.contests').innerHTML;");
           final pageTitle = await controller.runJavascriptReturningResult("window.document.querySelector('.pagetitle').innerHTML;");
+          final updateDate = await controller.runJavascriptReturningResult("window.document.querySelector('.contents-modtime').innerHTML;");
           final articleText = await controller.runJavascriptReturningResult("window.document.querySelector('.articletext').innerHTML;");
+          final articleFile = await controller.runJavascriptReturningResult("window.document.querySelector('.articletext .inlineaf-description').innerHTML;");
           final contentsListString = await controller.runJavascriptReturningResult("window.document.querySelector('.contentslist').innerHTML;");
-          if (html != 'null') {
-
-          }
+          print(articleText);
           if (contentsListString != 'null') {
             final contentsList = contentsListString.split('GRI').sublist(1);
             final Id = url.split('page_')[1].split('c')[0];
+            bool isTopPage = url.split('page_')[1].contains('_');
             bool isFirstContent = true;
+            Map<String, String> thisContent = {};
             for (final content in ManabaData.contentsList) {
               if (content['ID'] == Id) {
+                thisContent = content;
+                content["length"] = contentsList.length.toString();
                 isFirstContent = false;
               }
             }
             if (isFirstContent) {
-              ManabaData.contentsList.add({
+              thisContent = {
                 'ID' : Id,
                 'courseID' : url.split('page_')[1].split('c')[1].split('_')[0],
-                'title' : contentTitle.split(r'\">')[1].split(r'\<')[0],
+                'title' : contentTitle.split(r'\">')[1].split(r'\u003C')[0],
                 'length' : contentsList.length.toString(),
-              });
+              };
+              ManabaData.contentsList.add(thisContent);
             }
             for (final contentDetail in contentsList) {
+              final contentState = HtmlFunction.parseString(contentDetail, null, r'\"') ?? '';
               String contentDetailId = '';
-              bool isTopPage;
-              if (url.split('page_')[1].contains('_')) {
-                contentDetailId = url.split('page_')[1].split('_')[1];
-              } else {
-                contentDetailId = HtmlFunction.parseString(contentDetail, r'\"page_', r'c') ?? '';
-
-              }
-              contentDetail.startsWith(r'unread');
-              ManabaData.contentsDetailList.add({
+              String contentInfo = HtmlFunction.parseString(contentDetail, r'href=\"', r'\u003C/a') ?? '';
+              final infoList = contentInfo.split('_');
+              final isCurrent = contentState.contains('current');
+              print('isCurrent' + isCurrent.toString());
+              contentDetailId = (infoList.length > 2) ? infoList[2].split(r'\"')[0] : '';
+              ManabaData.contentsDetailList.removeWhere((element) => element['ID'] == contentDetailId);
+              final contentDetailData = {
                 'ID' : contentDetailId,
-                'ContentID' : ,
-                'is'
-              });
+                'contentID' : Id,
+                'isRead' : contentState.startsWith(r'read') ? 'true' : 'false',
+                'title' : HtmlFunction.parseString(contentInfo, r'\">', null) ?? '',
+                'body' : isCurrent ? (HtmlFunction.parseString(articleText, r'p>', r'\u003C/') ?? '') : '',
+                'updateDate' : updateDate,
+                'file' : articleFile,
+              };
+              print(contentDetailData);
+              ManabaData.contentsDetailList.add(contentDetailData);
+              if (!url.split('page_')[1].split('c')[1].contains('_')) {
+                if (isCurrent) {
+                  thisContent['topPage'] = contentDetailId;
+                }
+              }
             }
+            ManageDataStream.getContentDetailStreamSink().add(Id);
           }
         }
 

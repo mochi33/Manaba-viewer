@@ -79,7 +79,10 @@ class HtmlFunction {
     }
   }
 
-  static String? parseString(String string, String? firstWord, String? lastWord) {
+  static String? parseString(String? string, String? firstWord, String? lastWord) {
+    if (string == null) {
+      return null;
+    }
     if(firstWord != null) {
       final firstParsedList = string.split(firstWord);
       if (firstParsedList.length > 1) {

@@ -19,7 +19,7 @@ class _CourseNewsDetailPageState extends State<CourseNewsDetailPage> {
 
   bool isFirstGet = false;
 
-  void getData(String? courseID,String? courseNewsID) {
+  void getData(String? courseID, String? courseNewsID) {
     if(courseID == null || courseNewsID == null) {
       return;
     }
