@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
+import '../../device_info.dart';
 
 class WebViewScreen2 extends StatefulWidget {
 
@@ -19,6 +21,7 @@ class WebViewScreen2 extends StatefulWidget {
 class _WebViewScreen2State extends State<WebViewScreen2> {
 
   final Completer<WebViewController> _controller = Completer<WebViewController>();
+  WebViewController? _webViewController;
 
   bool _isLoading = false;
   String _title = '';
@@ -36,6 +39,20 @@ class _WebViewScreen2State extends State<WebViewScreen2> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_title),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              await _webViewController?.reload();
+            },
+            icon: Icon(Icons.update, size: DeviceInfo.deviceHeight * 0.04),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await _webViewController?.goBack();
+        },
+        child: const Icon(Icons.subdirectory_arrow_left),
       ),
       body: _buildBody(),
     );
@@ -77,6 +94,7 @@ class _WebViewScreen2State extends State<WebViewScreen2> {
         });
         // ページタイトル取得
         final controller = await _controller.future;
+        _webViewController = controller;
         final title = await controller.getTitle();
         setState(() {
           if (title != null) {

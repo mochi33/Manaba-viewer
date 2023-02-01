@@ -1,10 +1,13 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:untitled1/html_function.dart';
 import 'package:untitled1/manaba_data.dart';
+import 'package:untitled1/page/pdf_page.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
 import 'package:untitled1/page/webview/web_view_screen2.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 import '../device_info.dart';
 
@@ -43,79 +46,110 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
             title: const Text('コンテンツ詳細'),
           ),
           body: SingleChildScrollView(
-            child: Column(
-              children: [
-                ListTile(
-                  title: Text(widget.contentData['title']!),
-                ),
-                StreamBuilder(
-                  stream: contentStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.data != null) {
-                      contentDetailList.clear();
-                      for (final contentDetailData in ManabaData.contentsDetailList) {
-                        if (contentDetailData['contentID'] == widget.contentData['ID']) {
-                          contentDetailList.add(contentDetailData);
-                        }
-                        if (!widget.isTopPage || !isFirstLoad) {
-                          if (contentDetailData['ID'] == contentDetailID) {
-                            contentDetail = contentDetailData;
+            child: Container(
+              padding: EdgeInsets.only(left: DeviceInfo.deviceWidth * 0.1, right: DeviceInfo.deviceWidth * 0.1),
+              child: Column(
+                children: [
+                  Center(
+                    child: ListTile(
+                      title: Text(widget.contentData['title']!),
+                    ),
+                  ),
+                  StreamBuilder(
+                    stream: contentStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.data != null) {
+                        contentDetailList.clear();
+                        for (final contentDetailData in ManabaData.contentsDetailList) {
+                          if (contentDetailData['contentID'] == widget.contentData['ID']) {
+                            contentDetailList.add(contentDetailData);
                           }
-                        } else {
-                          if (contentDetailData['ID'] == widget.contentData['topPage']) {
-                            contentDetail = contentDetailData;
+                          if (!widget.isTopPage || !isFirstLoad) {
+                            if (contentDetailData['ID'] == contentDetailID) {
+                              contentDetail = contentDetailData;
+                            }
+                          } else {
+                            if (contentDetailData['ID'] == widget.contentData['topPage']) {
+                              contentDetail = contentDetailData;
+                            }
                           }
                         }
-                      }
-                      for(final a in contentDetailList) {
-                        print('a' + a.toString());
-                      }
-                      return Column(
-                        children: [
-                          ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: contentDetailList.length,
-                            itemBuilder: (context, index) {
-                              return TextButton(
-                                child: Text(contentDetailList[index]['title'] ?? ''),
-                                onPressed: () => setState(() {
-                                  isFirstLoad = false;
-                                  contentDetailID = contentDetailList[index]['ID'] ?? '';
-                                  contentStream = ManageDataStream.getContentDetailStream();
-                                }),
-                              );
-                              },
-                          ),
-                          SizedBox(height: DeviceInfo.deviceHeight * 0.08,),
-                          Html(
-                            data: HtmlFunction.parseHTML(contentDetail['body'] ?? ''),
-                            onLinkTap: (link, a, b, c) {
-                              print(b);
-                              print(link);
-                              print(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? ''));
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen2(url: HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? ''))));
-                            },
-                          ),
-                          Html(
-                            data: HtmlFunction.parseHTML(contentDetail['file'] ?? ''),
-                            onLinkTap: (link, a, b, c) {
-                              print(b);
-                              print(link);
-                              launchUrl(Uri(
+                        for(final a in contentDetailList) {
+                          print('a' + a.toString());
+                        }
+                        return Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: contentDetailList.length,
+                              itemBuilder: (context, index) {
+                                return Column(
+                                  children: [
+                                    TextButton(
+                                      child: Text(contentDetailList[index]['title'] ?? ''),
+                                      onPressed: () => setState(() {
+                                        isFirstLoad = false;
+                                        contentDetailID = contentDetailList[index]['ID'] ?? '';
+                                        contentStream = ManageDataStream.getContentDetailStream();
+                                      }),
+                                    ),
+                                    Divider(height: DeviceInfo.deviceHeight * 0.005),
+                                  ],
+                                );
+                                },
+                            ),
+                            SizedBox(height: DeviceInfo.deviceHeight * 0.04,),
+                            Center(child: Text(contentDetail['title'] ?? ''),),
+                            Divider(height: DeviceInfo.deviceHeight * 0.01, color: Colors.black87),
+                            SizedBox(height: DeviceInfo.deviceHeight * 0.02,),
+                            (contentDetail['body'] != null && contentDetail['body'] != '') ? Container(
+                              // decoration: BoxDecoration(
+                              //   border: Border.all(color: Colors.black, width: 2),
+                              // ),
+                              child: Html(
+                                data: HtmlFunction.parseHTML(contentDetail['body']!),
+                                onLinkTap: (link, a, b, c) async {
+                                  print(link);
+                                  print('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''));
+                                  if (await canLaunchUrl(Uri.parse(currentUrl ?? ''))) {
+                                    launchUrl(Uri.parse(currentUrl ?? ''), mode: LaunchMode.externalApplication);
+                                  }
+                                  //print(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? ''));
+                                  //Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen2(url: HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? ''))));
+                                  //Navigator.push(context, MaterialPageRoute(builder: (context) => PDFPage(pdfURL: 'https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''))));
+                                  // launchUrl(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')),);
+                                  // Map<String, String> header = {'cookie' : webViewCookie ?? ''};
+                                  // http.Response response = await http.get(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')), headers: header);
+                                  // print(response.body);
+                                },
 
-                              ));
-                              //downloadFile('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''));
-                              //Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen2(url: 'https://docs.google.com/viewer?url=' + 'https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''))));
-                            },
-                          )
-                        ],
-                      );
-                    } else {
-                      return Container();
-                    }
-                  },
-                ),
-              ],
+                              ),
+                            ) : Container(),
+                            SizedBox(height: DeviceInfo.deviceHeight * 0.05,),
+                            // (contentDetail['file'] != null || contentDetail['file'] != '') ? Container(
+                            //   decoration: BoxDecoration(
+                            //     border: Border.all(color: Colors.black, width: 2),
+                            //   ),
+                            //   child: Html(
+                            //     data: HtmlFunction.parseHTML((contentDetail['file'] == null || contentDetail['file'] == '') ? '' : contentDetail['file']!),
+                            //     onLinkTap: (link, a, b, c) {
+                            //       print(b);
+                            //       print(link);
+                            //       Navigator.push(context, MaterialPageRoute(builder: (context) => PDFPage(pdfURL: link ?? '')));
+                            //       //downloadFile('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''));
+                            //       //Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen2(url: 'https://docs.google.com/viewer?url=' + 'https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''))));
+                            //     },
+                            //   ),
+                            // ) : Container(),
+                          ],
+                        );
+                      } else {
+                        return Container();
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         )

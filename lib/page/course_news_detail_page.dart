@@ -3,6 +3,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:untitled1/manaba_data.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
 import 'package:untitled1/page/webview/web_view_screen2.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../html_function.dart';
 
@@ -40,12 +41,12 @@ class _CourseNewsDetailPageState extends State<CourseNewsDetailPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 30.0,),
-                Text(widget.courseNewsData['title'] ?? ''),
+                Center(child: Text(widget.courseNewsData['title'] ?? '', style: TextStyle(fontSize: 20),)),
                 const SizedBox(height: 10.0,),
                 Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
+                  // decoration: BoxDecoration(
+                  //   border: Border.all(color: Colors.black, width: 2),
+                  // ),
                   child: StreamBuilder(
                     stream: ManageDataStream.getCourseNewsDetailStream(),
                     builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
@@ -65,11 +66,13 @@ class _CourseNewsDetailPageState extends State<CourseNewsDetailPage> {
                           children: [
                             Html(
                               data: HtmlFunction.parseHTML(_courseNewsData['detail'] ?? ''),
-                              onLinkTap: (link, a, b, c) {
+                              onLinkTap: (link, a, b, c) async {
                                 print(b);
                                 print(link);
-                                print(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? ''));
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen2(url: HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? ''))));
+                                final uri = Uri.parse(HtmlFunction.parseString(link, r'\"', null) ?? '');
+                                if (await canLaunchUrl(uri)) {
+                                  launchUrl(Uri.parse(HtmlFunction.parseString(link, r'\"', null) ?? ''));
+                                }
                               },
                             ),
                             const SizedBox(height: 30.0),

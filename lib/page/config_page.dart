@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:untitled1/WebViewInfo.dart';
+import 'package:untitled1/page/webview/web_view_screen.dart';
 
 import '../device_info.dart';
 
@@ -15,11 +16,16 @@ class _ConfigPageState extends State<ConfigPage> {
 
   final TextEditingController _userIdController = TextEditingController();
   final TextEditingController _userPassController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('設定'),
+      ),
       body: Container(
+        padding: EdgeInsets.only(right: DeviceInfo.deviceWidth * 0.05, left: DeviceInfo.deviceWidth * 0.05),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -57,6 +63,9 @@ class _ConfigPageState extends State<ConfigPage> {
               ),
               const SizedBox(height: 50.0,),
               ElevatedButton(
+                style: ButtonStyle(
+                  backgroundColor: !_isLoading ? MaterialStateProperty.all<Color>(Colors.blueAccent) : MaterialStateProperty.all<Color>(Colors.black12),
+                ),
                 onPressed: () async {
                   if(_userIdController.text != ''&& _userPassController.text != ''){
                     const storage = FlutterSecureStorage();
@@ -66,17 +75,62 @@ class _ConfigPageState extends State<ConfigPage> {
                     }
                     await storage.write(key: 'ID', value: _userIdController.text);
                     await storage.write(key: 'PASSWORD', value: _userPassController.text);
-                    Navigator.pop(context);
+                    await mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+                    setState(() {
+                      _isLoading = true;
+                    });
+                    await Future.delayed(const Duration(seconds: 3));
+                    setState(() {
+                      _isLoading = false;
+                    });
+                    if (currentUrl?.contains('https://ct.ritsumei.ac.jp/ct') == true) {
+                      showDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('ログインに成功しました。'),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('戻る'),
+                                )
+                              ],
+                            );
+                          });
+                    } else {
+                      showDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('IDまたはパスワードが間違っています。'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text('戻る'),
+                            )
+                          ],
+                        );
+                      });
+                    }
                   } else {
                     showDialog(
+                        barrierDismissible: false,
                         context: context,
-                        builder: (_) {
+                        builder: (BuildContext context) {
                           return AlertDialog(
                             title: const Text('入力してない項目があります。'),
                             content: const Text('IDとパスワードを入力してください。'),
                             actions: <Widget>[
                               TextButton(
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
                                   child: const Text('戻る'),
                               )
                             ],
@@ -85,10 +139,10 @@ class _ConfigPageState extends State<ConfigPage> {
                         );
                   }
                 },
-                child: const SizedBox(
+                child: SizedBox(
                   width: 80,
                   height: 50,
-                  child: Center(child: Text('保存', style: TextStyle(fontSize: 30),)),
+                  child: Center(child: !_isLoading ? Text('保存', style: const TextStyle(fontSize: 30),) : const Icon(Icons.update)),
                 ),
               )
             ],

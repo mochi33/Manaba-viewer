@@ -14,6 +14,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:untitled1/page/main_page.dart';
 
 WebViewController? mainController;
+String? currentUrl;
 
 class WebViewScreen extends StatefulWidget {
 
@@ -81,6 +82,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         final controller = await webController.future;
         mainController = controller;
         String? title = await controller.getTitle();
+        currentUrl = url;
 
         if(AppInfo.isUserChanged) {
           _cookieManager.clearCookies();
@@ -307,8 +309,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
               }
             }
           }
+          //コンテンツ取得
           final contentHtml = await controller.runJavascriptReturningResult("window.document.querySelector('.top-contents-list-body').innerHTML;");
           if (contentHtml != 'null') {
+            ManabaData.contentsList.removeWhere((e) => e['courseID'] == courseID);
             final contentsList = contentHtml.split(r'contents-card\"').sublist(1);
             for (final content in contentsList) {
               final info = content.split(r'href=\"page_')[1];
@@ -413,9 +417,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 'contentID' : Id,
                 'isRead' : contentState.startsWith(r'read') ? 'true' : 'false',
                 'title' : HtmlFunction.parseString(contentInfo, r'\">', null) ?? '',
-                'body' : isCurrent ? (HtmlFunction.parseString(articleText, r'p>', r'\u003C/') ?? '') : '',
+                'body' : isCurrent ? articleText : '',//(HtmlFunction.parseString(articleText, r'p>', r'\u003C/') ?? '') : '',
                 'updateDate' : updateDate,
-                'file' : articleFile,
+                //'file' : articleFile,
               };
               print(contentDetailData);
               ManabaData.contentsDetailList.add(contentDetailData);

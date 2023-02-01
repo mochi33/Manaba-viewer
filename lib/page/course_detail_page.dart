@@ -6,6 +6,7 @@ import 'package:untitled1/manaba_data.dart';
 import 'package:untitled1/page/manage.dart';
 import 'package:untitled1/page/query_detail_page.dart';
 import 'package:untitled1/page/report_detail_page.dart';
+import 'package:untitled1/page/rotating_update_button.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
 
 import 'content_detail_page.dart';
@@ -46,6 +47,15 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
         child: Scaffold(
           appBar: AppBar(
             title: const Text("コース詳細"),
+            actions: [
+              IconButton(
+                onPressed: () async {
+                  _getData(_courseData['ID']!);
+                  setState(() {});
+                },
+                icon: const RotatingUpdateButton(),
+              )
+            ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -57,8 +67,9 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   Center(
                     child: Text(_courseData['title'] ?? '', style: TextStyle(fontSize: 20)),
                   ),
-                  const SizedBox(height: 20.0,),
                   const SizedBox(height: 10.0,),
+                  const Divider(color: Colors.black87),
+                  const SizedBox(height: 20.0,),
                   SizedBox(
                     width: DeviceInfo.deviceWidth * 0.7,
                     child: StreamBuilder(
@@ -97,7 +108,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                               onPressed: () {
                                                 Navigator.push(context, MaterialPageRoute(builder: (context) => CourseNewsDetailPage(courseNewsData: _courseNewsList[index])),);
                                               },
-                                              child: Text(_courseNewsList[index]['title'] ?? ''),
+                                              child: Text(_courseNewsList[index]['title'] ?? '', style: TextStyle(color: (_courseNewsList[index]['isRead'] == 'true') ? Colors.blueAccent : Colors.orange),),
                                             ),
                                             Text(_courseNewsList[index]['date'] ?? ''),
                                             SizedBox(height: (index == _courseNewsList.length - 1) ? 20.0 : 5.0),

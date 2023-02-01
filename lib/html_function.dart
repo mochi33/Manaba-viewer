@@ -63,7 +63,7 @@ class HtmlFunction {
       decodedUrl += a[0];
       for (String str in a.sublist(1)) {
         if (str.startsWith(RegExp(r'[0-9A-F][0-9A-F]'))) {
-          print('asciiNum' + str.substring(0, 2));
+          //print('asciiNum' + str.substring(0, 2));
           final b = asciiConverter[str.substring(0, 2)] ?? '';
           if (str.length > 2) {
             decodedUrl += b + str.substring(2);
