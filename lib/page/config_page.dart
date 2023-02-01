@@ -75,7 +75,7 @@ class _ConfigPageState extends State<ConfigPage> {
                     }
                     await storage.write(key: 'ID', value: _userIdController.text);
                     await storage.write(key: 'PASSWORD', value: _userPassController.text);
-                    await mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+                    await mainController?.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
                     setState(() {
                       _isLoading = true;
                     });
@@ -142,7 +142,7 @@ class _ConfigPageState extends State<ConfigPage> {
                 child: SizedBox(
                   width: 80,
                   height: 50,
-                  child: Center(child: !_isLoading ? Text('保存', style: const TextStyle(fontSize: 30),) : const Icon(Icons.update)),
+                  child: Center(child: !_isLoading ? const Text('保存', style: TextStyle(fontSize: 30),) : const Icon(Icons.update)),
                 ),
               )
             ],

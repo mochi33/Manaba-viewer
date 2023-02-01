@@ -1,4 +1,7 @@
 
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:untitled1/html_function.dart';
@@ -111,18 +114,25 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
                                 onLinkTap: (link, a, b, c) async {
                                   print(link);
                                   print('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''));
-                                  if (await canLaunchUrl(Uri.parse(currentUrl ?? ''))) {
-                                    launchUrl(Uri.parse(currentUrl ?? ''), mode: LaunchMode.externalApplication);
+                                  if (link?.contains('iframe') == false) {
+                                    if (link?.contains('http') == true) {
+                                      launchUrl(Uri.parse((HtmlFunction.parseString(link, r'\"', null) ?? '')), mode: LaunchMode.externalApplication);
+                                    } else {
+                                      launchUrl(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')), mode: LaunchMode.externalApplication);
+                                    }
+                                  } else {
+                                    launchUrl(Uri.parse(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? '')), mode: LaunchMode.externalApplication);
                                   }
+                                  //final filename = await downloadFile('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''), "", '');
+                                  //print(filename);
                                   //print(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? ''));
-                                  //Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen2(url: HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? ''))));
+                                 // Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen2(url: 'https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''))));
                                   //Navigator.push(context, MaterialPageRoute(builder: (context) => PDFPage(pdfURL: 'https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''))));
                                   // launchUrl(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')),);
                                   // Map<String, String> header = {'cookie' : webViewCookie ?? ''};
                                   // http.Response response = await http.get(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')), headers: header);
                                   // print(response.body);
                                 },
-
                               ),
                             ) : Container(),
                             SizedBox(height: DeviceInfo.deviceHeight * 0.05,),
@@ -155,6 +165,32 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
         )
     );
 
+  }
+
+  Future<String> downloadFile(String url, String fileName, String dir) async {
+    HttpClient httpClient = HttpClient();
+    File file;
+    String filePath = '';
+    String myUrl = '';
+
+    try {
+      //myUrl = url+'/'+fileName;
+      myUrl = url;
+      var request = await httpClient.getUrl(Uri.parse(myUrl));
+      var response = await request.close();
+      if(response.statusCode == 200) {
+        var bytes = await consolidateHttpClientResponseBytes(response);
+        filePath = '$dir/$fileName';
+        file = File(filePath);
+        await file.writeAsBytes(bytes);
+      } else {
+        filePath = 'Error code:'+response.statusCode.toString();
+      }
+    } catch(ex){
+      filePath = 'Can not fetch url';
+    }
+
+    return filePath;
   }
 
   // Widget titleList(List<Map<String, String>> contentDetailList) {

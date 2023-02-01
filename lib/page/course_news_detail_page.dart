@@ -70,8 +70,14 @@ class _CourseNewsDetailPageState extends State<CourseNewsDetailPage> {
                                 print(b);
                                 print(link);
                                 final uri = Uri.parse(HtmlFunction.parseString(link, r'\"', null) ?? '');
-                                if (await canLaunchUrl(uri)) {
-                                  launchUrl(Uri.parse(HtmlFunction.parseString(link, r'\"', null) ?? ''));
+                                if (link?.contains('iframe') == false) {
+                                  if (link?.contains('http') == true) {
+                                    launchUrl(Uri.parse((HtmlFunction.parseString(link, r'\"', null) ?? '')), mode: LaunchMode.externalApplication);
+                                  } else {
+                                    launchUrl(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')), mode: LaunchMode.externalApplication);
+                                  }
+                                } else {
+                                  launchUrl(Uri.parse(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? '')), mode: LaunchMode.externalApplication);
                                 }
                               },
                             ),
