@@ -51,7 +51,7 @@ class _ReportAndQueryPageState extends State<ReportAndQueryPage> {
             return Column(
               children: [
                 const ListTile(
-                  title: Text('小テスト'),
+                  title: Text('未提出の小テスト'),
                 ),
                 Expanded(
                   child: ListView.builder(
@@ -67,7 +67,12 @@ class _ReportAndQueryPageState extends State<ReportAndQueryPage> {
                                   onPressed: () {
                                     Navigator.push(context, MaterialPageRoute(builder: (context) => QueryDetailPage(queryData: ManabaData.queryData[index]),));
                                   },
-                                  child: Text(ManabaData.queryData[index]['title']!),
+                                  child: Text(
+                                    ManabaData.queryData[index]['title']!,
+                                    style: TextStyle(
+                                        color: (ManabaData.queryData[index]['isRead'] == 'true') ? Colors.blueAccent : Colors.orange,
+                                    ),
+                                  ),
                                 ),
                               ),
                               Container(
@@ -80,7 +85,7 @@ class _ReportAndQueryPageState extends State<ReportAndQueryPage> {
                   ),
                 ),
                 const ListTile(
-                  title: Text('レポート'),
+                  title: Text('未提出のレポート'),
                 ),
                 Expanded(
                   child: ListView.builder(

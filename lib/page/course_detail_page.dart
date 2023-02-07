@@ -25,17 +25,27 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
   List<Map<String, String>> courseReportList = [];
   List<Map<String, String>> courseQueryList = [];
   List<Map<String, String>> courseContentsList = [];
+  bool isAddCourseNewsList = false;
 
   void _getData(String courseID) async {
     await mainController?.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseID);
   }
 
+  void _getCourseNewsData(String courseID) async {
+    await mainController?.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + courseID + '_news');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.courseData['ID'] != null) {
+      _getData(widget.courseData['ID']!);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Map<String, String> _courseData = widget.courseData;
-    if (_courseData['ID'] != null) {
-      _getData(_courseData['ID']!);
-    }
     List<Map<String, String>> _courseNewsList = [];
     for (var courseNews in ManabaData.courseNewsList) {
       if (courseNews['courseID'] == _courseData['ID']) {
@@ -65,7 +75,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                 children: [
                   const SizedBox(height: 10.0,),
                   Center(
-                    child: Text(_courseData['title'] ?? '', style: TextStyle(fontSize: 20)),
+                    child: Text(_courseData['title'] ?? '', style: const TextStyle(fontSize: 20)),
                   ),
                   const SizedBox(height: 10.0,),
                   const Divider(color: Colors.black87),
@@ -83,19 +93,32 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                         }
                         return Column(
                           children: [
-                            const Center(
-                              child: Text("コースニュース"),
+                            Row(
+                              children: [
+                                IconButton(
+                                    onPressed: () {
+                                      if (ManabaData.isCourseNewsListOpened) {
+                                        ManabaData.isCourseNewsListOpened = false;
+                                      } else {
+                                        ManabaData.isCourseNewsListOpened = true;
+                                      }
+                                      setState(() {});
+                                      },
+                                    icon: Icon((ManabaData.isCourseNewsListOpened) ? Icons.arrow_drop_down_outlined : Icons.arrow_drop_up_outlined)),
+                                const Text("コースニュース" , style: TextStyle(fontSize: 16)),
+                              ],
                             ),
                             const SizedBox(height: 10,),
                             Container(
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.black, width: 2),
                               ),
-                              child: Column(
+                              child: (ManabaData.isCourseNewsListOpened) ? Column(
                                 children: [
                                   SizedBox(height: (_courseNewsList.isEmpty) ? 40 : 0,),
                                   ListView.builder(
                                     shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
                                     itemCount: _courseNewsList.length,
                                     itemBuilder: (BuildContext context, int index) {
                                       return Container(
@@ -108,7 +131,10 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                               onPressed: () {
                                                 Navigator.push(context, MaterialPageRoute(builder: (context) => CourseNewsDetailPage(courseNewsData: _courseNewsList[index])),);
                                               },
-                                              child: Text(_courseNewsList[index]['title'] ?? '', style: TextStyle(color: (_courseNewsList[index]['isRead'] == 'true') ? Colors.blueAccent : Colors.orange),),
+                                              child: Text(
+                                                _courseNewsList[index]['title'] ?? '',
+                                                style: TextStyle(color: (_courseNewsList[index]['isRead'] == 'true') ? Colors.blueAccent : Colors.orange),
+                                              ),
                                             ),
                                             Text(_courseNewsList[index]['date'] ?? ''),
                                             SizedBox(height: (index == _courseNewsList.length - 1) ? 20.0 : 5.0),
@@ -117,8 +143,20 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                       );
                                     },
                                   ),
+                                  (_courseNewsList.length > 4 && !isAddCourseNewsList) ?
+                                      Container(
+                                        child: TextButton(
+                                          onPressed: () {
+                                            _getCourseNewsData(_courseData['ID'] ?? '');
+                                            isAddCourseNewsList = true;
+
+                                          },
+                                          child: const Text('さらに表示'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ): Container(),
                                 ],
-                              ),
+                              ) : Container(),
                             ),
                           ],
                         );
@@ -147,8 +185,20 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Center(
-                                  child: Text('レポート')
+                              Row(
+                                children: [
+                                  IconButton(
+                                      onPressed: () {
+                                        if (ManabaData.isReportListOpened) {
+                                          ManabaData.isReportListOpened = false;
+                                        } else {
+                                          ManabaData.isReportListOpened = true;
+                                        }
+                                        setState(() {});
+                                      },
+                                      icon: Icon((ManabaData.isReportListOpened) ? Icons.arrow_drop_down_outlined : Icons.arrow_drop_up_outlined)),
+                                  const Text("未提出のレポート" , style: TextStyle(fontSize: 16)),
+                                ],
                               ),
                               const SizedBox(height: 10,),
                               Container(
@@ -156,11 +206,12 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                   border: Border.all(color: Colors.black, width: 2),
                                 ),
                                 alignment: Alignment.topLeft,
-                                child: Column(
+                                child: (ManabaData.isReportListOpened) ? Column(
                                   children: [
                                     SizedBox(height: (courseReportList.isEmpty) ? 40 : 0,),
                                     ListView.builder(
                                       shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
                                       itemCount: courseReportList.length,
                                       itemBuilder: (BuildContext context, int index) {
                                         return Container(
@@ -172,7 +223,10 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                                 onPressed: () {
                                                   Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailPage(reportData: courseReportList[index])),);
                                                 },
-                                                child: Text(courseReportList[index]['title'] ?? ''),
+                                                child: Text(
+                                                  courseReportList[index]['title'] ?? '',
+                                                  style: TextStyle(color: (courseReportList[index]['isRead'] == 'true') ? Colors.blueAccent : Colors.orange),
+                                                ),
                                               ),
                                               Text('締切: ' + (courseReportList[index]['deadline'] ?? '')),
                                               SizedBox(height: (index == courseReportList.length - 1) ? 20.0 : 5.0),
@@ -182,11 +236,23 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                       },
                                     ),
                                   ],
-                                ),
+                                ) : Container(),
                               ),
                               const SizedBox(height: 20.0,),
-                              const Center(
-                                child: Text('小テスト'),
+                              Row(
+                                children: [
+                                  IconButton(
+                                      onPressed: () {
+                                        if (ManabaData.isQueryListOpened) {
+                                          ManabaData.isQueryListOpened = false;
+                                        } else {
+                                          ManabaData.isQueryListOpened = true;
+                                        }
+                                        setState(() {});
+                                      },
+                                      icon: Icon((ManabaData.isQueryListOpened) ? Icons.arrow_drop_down_outlined : Icons.arrow_drop_up_outlined)),
+                                  const Text("未提出の小テスト" , style: TextStyle(fontSize: 16)),
+                                ],
                               ),
                               const SizedBox(height: 10,),
                               Container(
@@ -194,12 +260,13 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                   border: Border.all(color: Colors.black, width: 2),
                                 ),
                                 alignment: Alignment.topLeft,
-                                child: Column(
+                                child: (ManabaData.isQueryListOpened) ? Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     SizedBox(height: (courseQueryList.isEmpty) ? 40 : 0,),
                                     ListView.builder(
                                       shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
                                       itemCount: courseQueryList.length,
                                       itemBuilder: (BuildContext context, int index) {
                                         return Container(
@@ -210,7 +277,10 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                                 onPressed: () {
                                                   Navigator.push(context, MaterialPageRoute(builder: (context) => QueryDetailPage(queryData: courseQueryList[index])),);
                                                 },
-                                                child: Text(courseQueryList[index]['title'] ?? ''),
+                                                child: Text(
+                                                  courseQueryList[index]['title'] ?? '',
+                                                  style: TextStyle(color: (courseQueryList[index]['isRead'] == 'true') ? Colors.blueAccent : Colors.orange),
+                                                ),
                                               ),
                                               Text('締切: ' + (courseQueryList[index]['deadline'] ?? '')),
                                               SizedBox(height: (index == courseQueryList.length - 1) ? 20.0 : 5.0),
@@ -220,7 +290,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                       },
                                     ),
                                   ],
-                                ),
+                                ) : Container(),
                               ),
                             ],
                           );
@@ -243,18 +313,31 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Center(
-                                child: Text('コンテンツ')
+                            Row(
+                              children: [
+                                IconButton(
+                                    onPressed: () {
+                                      if (ManabaData.isContentsListOpened) {
+                                        ManabaData.isContentsListOpened = false;
+                                      } else {
+                                        ManabaData.isContentsListOpened = true;
+                                      }
+                                      setState(() {});
+                                    },
+                                    icon: Icon((ManabaData.isContentsListOpened) ? Icons.arrow_drop_down_outlined : Icons.arrow_drop_up_outlined)),
+                                const Text("未提出のコンテンツ" , style: TextStyle(fontSize: 16)),
+                              ],
                             ),
                             const SizedBox(height: 10,),
                             Container(
                               decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 2),),
                               alignment: Alignment.topLeft,
-                              child: Column(
+                              child: (ManabaData.isContentsListOpened) ? Column(
                                 children: [
                                   SizedBox(height: (courseContentsList.isEmpty) ? 40 : 0,),
                                   ListView.builder(
                                       shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
                                       itemCount: courseContentsList.length,
                                       itemBuilder: (context, index) {
                                         return Container(
@@ -276,7 +359,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                       }
                                   )
                                 ],
-                              ),
+                              ) : Container(),
                             ),
                           ],
                         );

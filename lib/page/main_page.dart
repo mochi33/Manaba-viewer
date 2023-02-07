@@ -27,6 +27,7 @@ class _MainPageState extends State<MainPage> {
 
   final GlobalKey<State<ReportAndQueryPage>> reportAndQueryPageKey = GlobalKey<State<ReportAndQueryPage>>();
   final GlobalKey<State<TimetablePage>> timetablePageKey = GlobalKey<State<TimetablePage>>();
+  int selectedPage = 0;
 
   late final _screens = [
     ReportAndQueryPage(key: reportAndQueryPageKey,),
@@ -60,15 +61,28 @@ class _MainPageState extends State<MainPage> {
     DeviceInfo.dayOfWeek = now.weekday - 1;
 
     return Scaffold(
-      body: PersistentTabView(
-        context,
-        screens: _screens,
-        items: [
-          PersistentBottomNavBarItem(icon: const Icon(Icons.sticky_note_2_outlined), title: 'レポート\n小テスト'),
-          PersistentBottomNavBarItem(icon: const Icon(Icons.calendar_today_outlined), title: 'コース一覧'),
-          PersistentBottomNavBarItem(icon: const Icon(Icons.report), title: 'お知らせ'),
-          PersistentBottomNavBarItem(icon: const Icon(Icons.smartphone), title: 'ブラウザ'),
-          PersistentBottomNavBarItem(icon: const Icon(Icons.settings), title: '設定'),
+      body: Stack(
+        children: [
+          PersistentTabView(
+            context,
+            screens: _screens,
+            items: [
+              PersistentBottomNavBarItem(icon: const Icon(Icons.sticky_note_2_outlined), title: '課題'),
+              PersistentBottomNavBarItem(icon: const Icon(Icons.calendar_today_outlined), title: 'コース一覧'),
+              PersistentBottomNavBarItem(icon: const Icon(Icons.report), title: 'お知らせ'),
+              PersistentBottomNavBarItem(icon: const Icon(Icons.smartphone), title: 'ブラウザ'),
+              PersistentBottomNavBarItem(icon: const Icon(Icons.settings), title: '設定'),
+            ],
+            onItemSelected: (index) {
+              selectedPage = index;
+              setState(() {});
+            },
+            navBarHeight: DeviceInfo.deviceHeight * 0.10,
+            navBarStyle: NavBarStyle.style8,
+          ),
+          (!isSigned && selectedPage != 4) ? const Center(
+              child: Text("設定からログインしてください。")
+          ) : Container()
         ],
       ),
       // bottomNavigationBar: BottomNavigationBar(
