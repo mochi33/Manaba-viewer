@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:untitled1/WebViewInfo.dart';
+import 'package:untitled1/manaba_data.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
+import 'package:untitled1/page/webview/web_view_screen2.dart';
 
 import '../device_info.dart';
 
@@ -69,13 +71,11 @@ class _ConfigPageState extends State<ConfigPage> {
                 onPressed: () async {
                   if(_userIdController.text != ''&& _userPassController.text != ''){
                     const storage = FlutterSecureStorage();
-                    final _oldId = await storage.read(key: 'ID');
-                    if (_oldId != _userIdController.text) {
-                      AppInfo.isUserChanged = true;
-                    }
+                    AppInfo.isUserChanged = true;
                     await storage.write(key: 'ID', value: _userIdController.text);
                     await storage.write(key: 'PASSWORD', value: _userPassController.text);
                     await mainController?.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+                    //await mainController2?.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
                     setState(() {
                       _isLoading = true;
                     });
@@ -83,41 +83,41 @@ class _ConfigPageState extends State<ConfigPage> {
                     setState(() {
                       _isLoading = false;
                     });
-                    if (currentUrl?.contains('https://ct.ritsumei.ac.jp/ct') == true) {
-                      showDialog(
-                          barrierDismissible: false,
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text('ログインに成功しました。'),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('戻る'),
-                                )
-                              ],
-                            );
-                          });
-                    } else {
-                      showDialog(
-                          barrierDismissible: false,
-                          context: context,
-                          builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text('IDまたはパスワードが間違っています。'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text('戻る'),
-                            )
-                          ],
-                        );
-                      });
-                    }
+                    // if (currentUrl?.contains('https://ct.ritsumei.ac.jp/ct') == true || ManabaData.isTestMode) {
+                    //   showDialog(
+                    //       barrierDismissible: false,
+                    //       context: context,
+                    //       builder: (BuildContext context) {
+                    //         return AlertDialog(
+                    //           title: const Text('ログインに成功しました。'),
+                    //           actions: <Widget>[
+                    //             TextButton(
+                    //               onPressed: () {
+                    //                 Navigator.pop(context);
+                    //               },
+                    //               child: const Text('戻る'),
+                    //             )
+                    //           ],
+                    //         );
+                    //       });
+                    // } else {
+                    //   showDialog(
+                    //       barrierDismissible: false,
+                    //       context: context,
+                    //       builder: (BuildContext context) {
+                    //     return AlertDialog(
+                    //       title: const Text('IDまたはパスワードが間違っています。'),
+                    //       actions: <Widget>[
+                    //         TextButton(
+                    //           onPressed: () {
+                    //             Navigator.pop(context);
+                    //           },
+                    //           child: const Text('戻る'),
+                    //         )
+                    //       ],
+                    //     );
+                    //   });
+                    // }
                   } else {
                     showDialog(
                         barrierDismissible: false,

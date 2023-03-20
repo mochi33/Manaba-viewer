@@ -12,4 +12,6 @@ class ManabaData {
   static bool isReportListOpened = true;
   static bool isQueryListOpened = true;
   static bool isContentsListOpened = true;
+  static bool isTestMode = false;
+  static bool isSigned = false;
 }

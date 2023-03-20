@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:untitled1/StreamManager.dart';
 import 'package:untitled1/WebViewInfo.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
 
@@ -29,27 +30,9 @@ class _RotatingUpdateButtonState extends State<RotatingUpdateButton> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: ManageDataStream.getWebViewPageStateStream(),
+      stream: StreamManager.getCommonStream("webViewPageState"),
       builder: (con, snapshot) {
-        if(beforeState != AppInfo.isLoading) {
-          _timer?.cancel();
-          if (AppInfo.isLoading == true) {
-            _timer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
-              updateButtonAngle += 3;
-              setState(() {});
-            });
-          } else {
-            updateButtonAngle = 0;
-          }
-        }
-
-        if (AppInfo.isLoading == true) {
-          return Transform.rotate(
-            angle: updateButtonAngle * pi / 180,
-            child: Icon(Icons.update, size: DeviceInfo.deviceHeight * 0.04),);
-        } else {
-          return Icon(Icons.update, size: DeviceInfo.deviceHeight * 0.04);
-        }
+        return Icon((!AppInfo.isLoading) ? Icons.update : Icons.cloud_download_outlined, size: DeviceInfo.deviceHeight * 0.04,);
       },
     );
   }

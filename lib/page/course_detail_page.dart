@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:untitled1/StreamManager.dart';
 import 'package:untitled1/page/course_news_detail_page.dart';
 import 'package:untitled1/device_info.dart';
 import 'package:untitled1/manaba_data.dart';
@@ -83,7 +84,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   SizedBox(
                     width: DeviceInfo.deviceWidth * 0.7,
                     child: StreamBuilder(
-                      stream: ManageDataStream.getCourseStream(),
+                      stream: StreamManager.getStream("course"),
                       builder: (context, snapshot) {
                         _courseNewsList.clear();
                         for (var courseNews in ManabaData.courseNewsList) {
@@ -167,7 +168,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   SizedBox(
                     width: DeviceInfo.deviceWidth * 0.7,
                     child: StreamBuilder(
-                      stream: ManageDataStream.getReportQueryStream(),
+                      stream: StreamManager.getStream("reportQuery"),
                         builder: (context, snapshot) {
                           courseReportList.clear();
                           for(var report in ManabaData.reportData) {
@@ -301,7 +302,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   SizedBox(
                     width: DeviceInfo.deviceWidth * 0.7,
                     child: StreamBuilder(
-                      stream: ManageDataStream.getCourse2Stream(),
+                      stream: StreamManager.getStream("course2"),
                       builder: (context, snapshot) {
                         courseContentsList.clear();
                         for (final content in ManabaData.contentsList) {

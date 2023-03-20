@@ -5,11 +5,14 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:untitled1/StreamManager.dart';
 import 'package:untitled1/WebViewInfo.dart';
 import 'package:untitled1/device_info.dart';
 import 'package:untitled1/html_function.dart';
 import 'package:untitled1/manaba_data.dart';
 import 'package:untitled1/page/manage.dart';
+import 'package:untitled1/page/webview/web_view_screen2.dart';
+import 'package:untitled1/test_data.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:untitled1/page/main_page.dart';
 
@@ -32,8 +35,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
   final Completer<WebViewController> webController = Completer<WebViewController>();
   final FlutterSecureStorage storage = const FlutterSecureStorage();
   final _cookieManager = CookieManager();
-  bool _isNextLoad = false;
+  bool isLoginPage = false;
   int loadingCourseNumber = 0;
+  int loginCount = 0;
 
   @override
   void initState() {
@@ -73,8 +77,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       // ページの読み込み開始
       onPageStarted: (String url) {
         AppInfo.isLoading = true;
-        _isNextLoad = false;
-        ManageDataStream.getWebViewPageStateStreamSink().add('true');
+        StreamManager.addDataToStreamSink("webViewPageState", "true");
       },
       // ページ読み込み終了
       onPageFinished: (String url) async {
@@ -83,23 +86,54 @@ class _WebViewScreenState extends State<WebViewScreen> {
         mainController = controller;
         String? title = await controller.getTitle();
         currentUrl = url;
+        AppInfo.isLoading = false;
+        StreamManager.addDataToStreamSink("webViewPageState", "false");
 
         if(AppInfo.isUserChanged) {
           _cookieManager.clearCookies();
           mainController?.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
           AppInfo.isUserChanged = false;
+          return;
         }
 
         //サインインページ表示時
         if(title?.contains('Web Single Sign On') == true) {
-          isSigned = false;
+          if (loginCount > 2) {
+            loginCount = 0;
+            return;
+          }
+          loginCount++;
           AppInfo.pageType = PageType.signIn;
           String userID = await storage.read(key: 'ID') ?? '';
           String passWord = await storage.read(key: 'PASSWORD') ?? '';
+          if (userID == "test" && passWord == "test") {
+            ManabaData.isTestMode = true;
+            ManabaData.isSigned = true;
+            ManabaData.queryData = TestData.queryData;
+            ManabaData.reportData = TestData.reportData;
+            ManabaData.courseList = TestData.courseList;
+            StreamManager.addDataToStreamSink("reportQuery", "");
+            StreamManager.addDataToStreamSink("courseList", "");
+            print("test");
+            return;
+          } else {
+            ManabaData.isTestMode = false;
+            ManabaData.isSigned = false;
+          }
+          StreamManager.addDataToStreamSink("loginState", "");
+          isLoginPage = true;
           await controller.runJavascript('document.getElementsByName("USER")[0].value="' + userID + '";');
           await controller.runJavascript('document.getElementsByName("PASSWORD")[0].value="' + passWord + '";');
-          _isNextLoad = true;
           await controller.runJavascript('document.getElementById("Submit").click();');
+        } else {
+          loginCount = 0;
+          ManabaData.isSigned = true;
+          StreamManager.addDataToStreamSink("loginState", "");
+          if (isLoginPage) {
+            print("yatta");
+            await mainController2?.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+            isLoginPage = false;
+          }
         }
 
         //サインイン成功時、ホーム表示時
@@ -130,7 +164,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     'period' : courseInfo[1],
                     'place' : courseInfo.split(r':')[1].split(r'\"')[0],
                   };
-                  ManageDataStream.getCourseListStreamSink().add(courseCell['ID']);
+                  StreamManager.addDataToStreamSink("courseList", "");
                   debugPrint(courseCell['ID']);
                   debugPrint(courseCell['title']);
                   debugPrint(courseCell['isHomework']);
@@ -153,7 +187,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
             }
 
             if(ManabaData.courseList.isNotEmpty) {
-              _isNextLoad = true;
               await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + ManabaData.courseList[0]['ID']! + '_query');
             }
           }
@@ -172,13 +205,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 final b = a[i].split(r'\u003Ca href=\"')[1].split(r'\">');
                 ManabaData.queryData.add({
                   'ID' : b[0].split('query_')[1],
-                  'courseID' : ManabaData.courseList[loadingCourseNumber]['ID']!,
+                  'courseID' : ManabaData.courseList[loadingCourseNumber]['ID'] ?? '',
+                  'courseTitle' : ManabaData.courseList[loadingCourseNumber]['title'] ?? '',
                   'title' : b[1].split(r'\u003C')[0],
                   'deadline' : a[i].split(r'center\">')[3].split(r'\u003C')[0],
                   'isRead' : a[i].contains('unread') ? 'false' : 'true',
                 });
                 debugPrint(ManabaData.queryData[ManabaData.queryData.length - 1]['title']);
-                ManageDataStream.getReportQueryStreamSink().add('');
+                StreamManager.addDataToStreamSink("reportQuery", "");
               }
             }
           }
@@ -186,19 +220,16 @@ class _WebViewScreenState extends State<WebViewScreen> {
             for(int i = loadingCourseNumber + 1; i < ManabaData.courseList.length; i++){
               if(ManabaData.courseList[i]['isHomework'] == 'true'){
                 loadingCourseNumber = i;
-                _isNextLoad = true;
                 await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + ManabaData.courseList[i]['ID']! + '_query');
                 break;
               }
               if(i == ManabaData.courseList.length - 1){
                 loadingCourseNumber = 0;
-                _isNextLoad = true;
                 await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + ManabaData.courseList[loadingCourseNumber]['ID']! + '_report');
               }
             }
           } else {
             loadingCourseNumber = 0;
-            _isNextLoad = true;
             await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + ManabaData.courseList[loadingCourseNumber]['ID']! + '_report');
           }
         }
@@ -217,13 +248,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 final b = a[i].split(r'\u003Ca href=\"')[1].split(r'\">');
                 ManabaData.reportData.add({
                   'ID' : b[0].split('report_')[1],
-                  'courseID' : ManabaData.courseList[loadingCourseNumber]['ID']!,
+                  'courseID' : ManabaData.courseList[loadingCourseNumber]['ID'] ?? "",
+                  'courseTitle' : ManabaData.courseList[loadingCourseNumber]['title'] ?? '',
                   'title' : b[1].split(r'\u003C')[0],
                   'deadline' : a[i].split(r'center\">')[4].split(r'\u003C')[0],
                   'isRead' : a[i].contains('unread') ? 'false' : 'true',
                 });
                 debugPrint(ManabaData.reportData[ManabaData.reportData.length - 1]['title']);
-                ManageDataStream.getReportQueryStreamSink().add('');
+                StreamManager.addDataToStreamSink("reportQuery", "");
               }
             }
           }
@@ -231,7 +263,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
             for(int i = loadingCourseNumber + 1; i < ManabaData.courseList.length; i++){
               if(ManabaData.courseList[i]['isHomework'] == 'true'){
                 loadingCourseNumber = i;
-                _isNextLoad = true;
                 await controller.loadUrl('https://ct.ritsumei.ac.jp/ct/course_' + ManabaData.courseList[i]['ID']! + '_report');
                 break;
               }
@@ -244,7 +275,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
               print(report['title']);
             }
 
-            ManageDataStream.getReportQueryStreamSink().add('');
+            StreamManager.addDataToStreamSink("reportQuery", "");
             loadingCourseNumber = 0;
             debugPrint('statefalse');
           }
@@ -258,7 +289,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
           ManabaData.queryData.forEach((query) {
             if(query['ID'] == queryID){
               query['detail'] = html.split(r'word-break\">')[1].split(r'\u003C')[0];
-              ManageDataStream.getReportQueryDetailStreamSink().add(query['detail']);
+              StreamManager.addDataToStreamSink("reportQueryDetail", query["detail"] ?? "");
             }
           });
         }
@@ -272,7 +303,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
           ManabaData.reportData.forEach((report) {
             if(report['ID'] == queryID){
               report['detail'] = detail;
-              ManageDataStream.getReportQueryDetailStreamSink().add(report['detail']);
+              StreamManager.addDataToStreamSink("reportQueryDetail", report["detail"] ?? "");
             }
           });
         }
@@ -309,7 +340,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 debugPrint(_courseNewsInfo['date']);
                 debugPrint(_courseNewsInfo['isRead']);
                 ManabaData.courseNewsList.add(_courseNewsInfo);
-                ManageDataStream.getCourseStreamSink().add(courseID);
+                StreamManager.addDataToStreamSink("course", "");
               }
             }
           }
@@ -329,7 +360,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
               };
               print('contentInfo' + _contentInfo.toString());
               ManabaData.contentsList.add(_contentInfo);
-              ManageDataStream.getCourse2StreamSink().add(_contentInfo['ID']);
+              StreamManager.addDataToStreamSink("course2", _contentInfo["ID"] ?? "");
             }
           }
         }
@@ -342,7 +373,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
           for(var courseNews in ManabaData.courseNewsList) {
             if(courseNews['ID'] == courseNewsID) {
               courseNews['detail'] = html;
-              ManageDataStream.getCourseNewsDetailStreamSink().add(courseNewsID);
+              StreamManager.addDataToStreamSink("courseNewsDetail", courseNewsID);
               break;
             }
           }
@@ -373,7 +404,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 'isRead' : HtmlFunction.parseString(courseNews, null, r'\"')?.contains('unread') == true ? 'false' : 'true',
               };
               ManabaData.courseNewsList.add(_courseNewsInfo);
-              ManageDataStream.getCourseStreamSink().add(_courseNewsInfo['ID']);
+              StreamManager.addDataToStreamSink("course", _courseNewsInfo['ID'] ?? "");
             }
           }
 
@@ -398,7 +429,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   'courseInfo' : news.split('news-courseinfo')[1].split(r'title=\"')[1].split(r'\"')[0],
                 }
               );
-              ManageDataStream.getCourseNewsListStreamSink().add('');
+              StreamManager.addDataToStreamSink("courseNewsList", "");
             }
           }
         }
@@ -461,7 +492,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 }
               }
             }
-            ManageDataStream.getContentDetailStreamSink().add(Id);
+            StreamManager.addDataToStreamSink("contentDetail", Id);
           }
         }
         
@@ -489,7 +520,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   final id = HtmlFunction.parseString(infoList[2], r'announcement_detail_', r'\"') ?? '';
                   final info2 = HtmlFunction.parseString(infoList[2], r'href=', r'\u003C/a') ?? '';
                   final title = HtmlFunction.parseString(info2, r'title=\"', r'\">') ?? '';
-                  final isRead = infoList[2].contains('unread');
+                  final isRead = !infoList[2].contains('unread');
                   final writer = HtmlFunction.parseString(infoList[3], r'>', r'\u003C/')?.replaceAll(r'\n', '') ?? '';
                   final newsData = {
                     'ID' : id,
@@ -500,7 +531,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   };
                   print(newsData);
                   ManabaData.otherNewsList.add(newsData);
-                  ManageDataStream.getOtherNewsListStreamSink().add('');
+                  StreamManager.addDataToStreamSink("otherNewsList", "");
                 }
               }
             }
@@ -522,131 +553,16 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 news['detail'] = html;
               }
             }
-            ManageDataStream.getOtherNewsDetailStreamSink().add(newsID);
+            StreamManager.addDataToStreamSink("otherNewsDetail", newsID);
           }
         }
 
-        if (!_isNextLoad) {
-          AppInfo.isLoading = false;
-          ManageDataStream.getWebViewPageStateStreamSink().add('false');
-        }
       },
     );
   }
 
 }
 
-class ManageDataStream {
-  static StreamController onReportQueryDataChange = StreamController<String>();
-  static StreamController onReportQueryDetailDataChange = StreamController<String>();
-  static StreamController onCourseDataChange = StreamController<String>();
-  static StreamController onCourseNewsListChange = StreamController<String>();
-  static StreamController onCourseNewsDetailDataChange = StreamController<String>();
-  static StreamController onCourseListChange = StreamController<String>();
-  static StreamController onWebViewPageStateChange = StreamController<String>();
-  static StreamController onCourseData2Change = StreamController<String>();
-  static StreamController onContentDetailDataChange = StreamController<String>();
-  static StreamController onOtherNewsListDataChange = StreamController<String>();
-  static StreamController onOtherNewsDetailDataChange = StreamController<String>();
 
-  static Stream getReportQueryStream(){
-    onReportQueryDataChange = StreamController<String>();
-    return onReportQueryDataChange.stream;
-  }
 
-  static StreamSink getReportQueryStreamSink(){
-    return onReportQueryDataChange.sink;
-  }
-
-  static Stream getReportQueryDetailStream(){
-    onReportQueryDetailDataChange = StreamController<String>();
-    return onReportQueryDetailDataChange.stream;
-  }
-
-  static StreamSink getReportQueryDetailStreamSink(){
-    return onReportQueryDetailDataChange.sink;
-  }
-
-  static Stream getCourseStream(){
-    onCourseDataChange = StreamController<String>();
-    return onCourseDataChange.stream;
-  }
-
-  static StreamSink getCourseStreamSink(){
-    return onCourseDataChange.sink;
-  }
-
-  static Stream getCourseNewsDetailStream(){
-    onCourseNewsDetailDataChange = StreamController<String>();
-    return onCourseNewsDetailDataChange.stream;
-  }
-
-  static StreamSink getCourseNewsDetailStreamSink(){
-    return onCourseNewsDetailDataChange.sink;
-  }
-
-  static Stream getCourseNewsListStream(){
-    onCourseNewsListChange = StreamController<String>();
-    return onCourseNewsListChange.stream;
-  }
-
-  static StreamSink getCourseNewsListStreamSink(){
-    return onCourseNewsListChange.sink;
-  }
-
-  static Stream getCourseListStream(){
-    onCourseListChange = StreamController<String>();
-    return onCourseListChange.stream;
-  }
-
-  static StreamSink getCourseListStreamSink(){
-    return onCourseListChange.sink;
-  }
-
-  static Stream getWebViewPageStateStream(){
-    onWebViewPageStateChange = StreamController<String>();
-    return onWebViewPageStateChange.stream;
-  }
-
-  static StreamSink getWebViewPageStateStreamSink(){
-    return onWebViewPageStateChange.sink;
-  }
-
-  static Stream getCourse2Stream(){
-    onCourseData2Change = StreamController<String>();
-    return onCourseData2Change.stream;
-  }
-
-  static StreamSink getCourse2StreamSink(){
-    return onCourseData2Change.sink;
-  }
-
-  static Stream getContentDetailStream(){
-    onContentDetailDataChange = StreamController<String>();
-    return onContentDetailDataChange.stream;
-  }
-
-  static StreamSink getContentDetailStreamSink(){
-    return onContentDetailDataChange.sink;
-  }
-  
-  static Stream getOtherNewsListStream() {
-    onOtherNewsListDataChange = StreamController<String>();
-    return onOtherNewsListDataChange.stream;
-  }
-
-  static StreamSink getOtherNewsListStreamSink() {
-    return onOtherNewsListDataChange.sink;
-  }
-
-  static Stream getOtherNewsDetailStream() {
-    print("getOtehrNewsDetailStream");
-    onOtherNewsDetailDataChange = StreamController<String>();
-    return onOtherNewsDetailDataChange.stream;
-  }
-
-  static StreamSink getOtherNewsDetailStreamSink() {
-    return onOtherNewsDetailDataChange.sink;
-  }
-}
 

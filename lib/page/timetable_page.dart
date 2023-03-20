@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:untitled1/StreamManager.dart';
 import 'package:untitled1/page/course_detail_page.dart';
 import 'package:untitled1/device_info.dart';
 import 'package:untitled1/manaba_data.dart';
@@ -28,79 +29,77 @@ class _TimetablePageState extends State<TimetablePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Scaffold(
-          appBar: PreferredSize(
-            preferredSize: Size.fromHeight(DeviceInfo.deviceHeight * 0.07),
-            child: AppBar(
-              title: const Text("コース時間割"),
-              actions: [
-                IconButton(
-                  onPressed: () async {
-                    mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
-                    setState(() {});
-                  },
-                  icon: const RotatingUpdateButton(),
-                )
-              ],
-            ),
-          ),
-          body: Container(
-            child: StreamBuilder(
-              stream: ManageDataStream.getCourseListStream(),
-              builder: (context, snapshot) {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    scrollDirection: Axis.horizontal,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(DeviceInfo.deviceHeight * 0.07),
+        child: AppBar(
+          title: const Text("コース時間割"),
+          actions: [
+            IconButton(
+              onPressed: () async {
+                mainController!.loadUrl('https://ct.ritsumei.ac.jp/ct/home_course');
+                setState(() {});
+              },
+              icon: const RotatingUpdateButton(),
+            )
+          ],
+        ),
+      ),
+      body: Container(
+        child: StreamBuilder(
+          stream: StreamManager.getStream("courseList"),
+          builder: (context, snapshot) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 15,),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 15,),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            SizedBox(width: (DeviceInfo.deviceWidth / 4 * 3) + ((DeviceInfo.deviceWidth / 4) * (DeviceInfo.dayOfWeek + 0.3)),),
-                            const Text('本日', style: TextStyle(color: Colors.lightGreen)),
-                          ],
-                        ),
-                        const SizedBox(height: 10,),
-                        Row(
-                          children: [
-                            SizedBox(width: DeviceInfo.deviceWidth / 4 * 3,),
-                            Table(
-                              border:  TableBorder.all(color: Colors.lightBlueAccent),
-                              columnWidths: const <int, TableColumnWidth>{
-                                0: IntrinsicColumnWidth(),
-                                1: IntrinsicColumnWidth(),
-                                2: IntrinsicColumnWidth(),
-                                3: IntrinsicColumnWidth(),
-                                4: IntrinsicColumnWidth(),
-                                5: IntrinsicColumnWidth(),
-                                6: IntrinsicColumnWidth(),
-                              },
-                              children: [
-                                dayOfWeekRow(),
-                                timetableRow("1"),
-                                timetableRow("2"),
-                                timetableRow("3"),
-                                timetableRow("4"),
-                                timetableRow("5"),
-                              ],
-                            ),
-                            SizedBox(width: DeviceInfo.deviceWidth / 4 * 3,),
-                          ],
-                        ),
-                        SizedBox(height: DeviceInfo.deviceHeight * 0.5,),
+                        SizedBox(width: (DeviceInfo.deviceWidth / 4 * 3) + ((DeviceInfo.deviceWidth / 4) * (DeviceInfo.dayOfWeek + 0.3)),),
+                        const Text('本日', style: TextStyle(color: Colors.lightGreen)),
                       ],
                     ),
-                  ),
-                );
-              }
-            ),
-          ),
-        )
+                    const SizedBox(height: 10,),
+                    Row(
+                      children: [
+                        SizedBox(width: DeviceInfo.deviceWidth / 4 * 3,),
+                        Table(
+                          border:  TableBorder.all(color: Colors.lightBlueAccent),
+                          columnWidths: const <int, TableColumnWidth>{
+                            0: IntrinsicColumnWidth(),
+                            1: IntrinsicColumnWidth(),
+                            2: IntrinsicColumnWidth(),
+                            3: IntrinsicColumnWidth(),
+                            4: IntrinsicColumnWidth(),
+                            5: IntrinsicColumnWidth(),
+                            6: IntrinsicColumnWidth(),
+                          },
+                          children: [
+                            dayOfWeekRow(),
+                            timetableRow("1"),
+                            timetableRow("2"),
+                            timetableRow("3"),
+                            timetableRow("4"),
+                            timetableRow("5"),
+                          ],
+                        ),
+                        SizedBox(width: DeviceInfo.deviceWidth / 4 * 3,),
+                      ],
+                    ),
+                    SizedBox(height: DeviceInfo.deviceHeight * 0.5,),
+                  ],
+                ),
+              ),
+            );
+          }
+        ),
+      ),
     );
   }
 

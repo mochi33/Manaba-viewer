@@ -3,6 +3,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../StreamManager.dart';
 import '../html_function.dart';
 import '../manaba_data.dart';
 
@@ -45,7 +46,7 @@ class _OtherNewsDetailPageState extends State<OtherNewsDetailPage> {
                 //   border: Border.all(color: Colors.black, width: 2),
                 // ),
                 child: StreamBuilder(
-                  stream: ManageDataStream.getOtherNewsDetailStream(),
+                  stream: StreamManager.getStream("otherNewsDetail"),
                   builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
                     if(!isFirstGet) {
                       getData(widget.otherNewsData['ID'] ?? '');
@@ -74,7 +75,7 @@ class _OtherNewsDetailPageState extends State<OtherNewsDetailPage> {
                                   launchUrl(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')), mode: LaunchMode.externalApplication);
                                 }
                               } else {
-                                launchUrl(Uri.parse(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? '')), mode: LaunchMode.externalApplication);
+                                launchUrl(Uri.parse(HtmlFunction.urlAsciiDecoder((HtmlFunction.parseString(link, r'\"', null) ?? '').split('url=')[1] ?? '')), mode: LaunchMode.externalApplication);
                               }
                             },
                           ),

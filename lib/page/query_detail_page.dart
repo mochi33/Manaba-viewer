@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:untitled1/StreamManager.dart';
 import 'package:untitled1/page/webview/web_view_screen.dart';
 
 class QueryDetailPage extends StatefulWidget {
@@ -30,7 +31,7 @@ class _QueryDetailPageState extends State<QueryDetailPage> {
                   title: Text(widget.queryData['title']!),
                 ),
                 (widget.queryData['detail'] == null) ? StreamBuilder(
-                  stream: ManageDataStream.getReportQueryDetailStream(),
+                  stream: StreamManager.getStream("reportQueryDetail"),
                   builder: (context, snapshot) {
                     if (snapshot.data != null) {
                       debugPrint('stream!!');

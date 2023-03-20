@@ -8,6 +8,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../device_info.dart';
 
+WebViewController? mainController2;
+
 class WebViewScreen2 extends StatefulWidget {
 
   String url;
@@ -42,7 +44,7 @@ class _WebViewScreen2State extends State<WebViewScreen2> {
         actions: [
           IconButton(
             onPressed: () async {
-              await _webViewController?.reload();
+              await _webViewController?.loadUrl(await _webViewController?.currentUrl() ?? "");
             },
             icon: Icon(Icons.update, size: DeviceInfo.deviceHeight * 0.04),
           ),
@@ -88,6 +90,7 @@ class _WebViewScreen2State extends State<WebViewScreen2> {
       },
       // ページ読み込み終了
       onPageFinished: (String url) async {
+        print("aaaa");
         // ローディング終了
         setState(() {
           _isLoading = false;
@@ -95,6 +98,7 @@ class _WebViewScreen2State extends State<WebViewScreen2> {
         // ページタイトル取得
         final controller = await _controller.future;
         _webViewController = controller;
+        mainController2 = controller;
         final title = await controller.getTitle();
         setState(() {
           if (title != null) {

@@ -5,6 +5,7 @@ import 'package:untitled1/page/webview/web_view_screen.dart';
 import 'package:untitled1/page/webview/web_view_screen2.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../StreamManager.dart';
 import '../html_function.dart';
 
 class CourseNewsDetailPage extends StatefulWidget {
@@ -48,7 +49,7 @@ class _CourseNewsDetailPageState extends State<CourseNewsDetailPage> {
                   //   border: Border.all(color: Colors.black, width: 2),
                   // ),
                   child: StreamBuilder(
-                    stream: ManageDataStream.getCourseNewsDetailStream(),
+                    stream: StreamManager.getStream("courseNewsDetail"),
                     builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
                       if(!isFirstGet) {
                         getData(widget.courseNewsData['courseID'], widget.courseNewsData['ID']);
@@ -77,7 +78,7 @@ class _CourseNewsDetailPageState extends State<CourseNewsDetailPage> {
                                     launchUrl(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')), mode: LaunchMode.externalApplication);
                                   }
                                 } else {
-                                  launchUrl(Uri.parse(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? '')), mode: LaunchMode.externalApplication);
+                                  launchUrl(Uri.parse(HtmlFunction.urlAsciiDecoder((HtmlFunction.parseString(link, r'\"', null) ?? '').split('url=')[1] ?? '')), mode: LaunchMode.externalApplication);
                                 }
                               },
                             ),

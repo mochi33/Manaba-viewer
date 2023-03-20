@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_tab_view.dart';
+import 'package:untitled1/StreamManager.dart';
+import 'package:untitled1/manaba_data.dart';
 import 'package:untitled1/page/news_list_page.dart';
 import 'package:untitled1/page/timetable_page.dart';
 import 'package:untitled1/page/query_detail_page.dart';
@@ -60,41 +62,61 @@ class _MainPageState extends State<MainPage> {
     DeviceInfo.month = now.month;
     DeviceInfo.dayOfWeek = now.weekday - 1;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          PersistentTabView(
-            context,
-            screens: _screens,
-            items: [
-              PersistentBottomNavBarItem(icon: const Icon(Icons.sticky_note_2_outlined), title: '課題'),
-              PersistentBottomNavBarItem(icon: const Icon(Icons.calendar_today_outlined), title: 'コース一覧'),
-              PersistentBottomNavBarItem(icon: const Icon(Icons.report), title: 'お知らせ'),
-              PersistentBottomNavBarItem(icon: const Icon(Icons.smartphone), title: 'ブラウザ'),
-              PersistentBottomNavBarItem(icon: const Icon(Icons.settings), title: '設定'),
-            ],
-            onItemSelected: (index) {
-              selectedPage = index;
-              setState(() {});
-            },
-            navBarHeight: DeviceInfo.deviceHeight * 0.10,
-            navBarStyle: NavBarStyle.style8,
-          ),
-          (!isSigned && selectedPage != 4) ? const Center(
-              child: Text("設定からログインしてください。")
-          ) : Container()
-        ],
+    return SafeArea(
+      child: Scaffold(
+        body: Stack(
+          children: [
+            PersistentTabView(
+              context,
+              screens: _screens,
+              items: [
+                PersistentBottomNavBarItem(icon: const Icon(Icons.sticky_note_2_outlined), title: '課題'),
+                PersistentBottomNavBarItem(icon: const Icon(Icons.calendar_today_outlined), title: 'コース一覧'),
+                PersistentBottomNavBarItem(icon: const Icon(Icons.report), title: 'お知らせ'),
+                PersistentBottomNavBarItem(icon: const Icon(Icons.smartphone), title: 'ブラウザ'),
+                PersistentBottomNavBarItem(icon: const Icon(Icons.settings), title: '設定'),
+              ],
+              onItemSelected: (index) {
+                selectedPage = index;
+                setState(() {});
+              },
+              navBarHeight: DeviceInfo.deviceHeight * 0.10,
+              navBarStyle: NavBarStyle.style8,
+            ),
+            StreamBuilder(
+                stream: StreamManager.getStream("loginState"),
+                builder: (context, snapshot) {
+                  return ((!ManabaData.isSigned && !ManabaData.isTestMode)) ? (selectedPage != 4 ? const Center(
+                      child: Text("設定からログインしてください。")
+                  ) : Container(
+                    alignment: Alignment.topRight,
+                    padding: EdgeInsets.all(DeviceInfo.deviceHeight * 0.02),
+                    child: const Text("未ログイン",
+                      style: TextStyle(
+                          color: Colors.white
+                      ),
+                    ),))
+                      : (selectedPage != 4 ? Container() : Container(
+                    alignment: Alignment.topRight,
+                    padding: EdgeInsets.all(DeviceInfo.deviceHeight * 0.02),
+                    child: const Text("ログイン中", style: TextStyle(
+                        color: Colors.white
+                    ),),));
+                }
+            )
+          ],
+        ),
+        // bottomNavigationBar: BottomNavigationBar(
+        //   currentIndex:  _selectedIndex,
+        //   onTap: _onIconTapped,
+        //   items: const <BottomNavigationBarItem>[
+        //     BottomNavigationBarItem(icon: Icon(Icons.home_work_outlined), label: 'レポート＆小テスト'),
+        //     BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), label: 'コース一覧'),
+        //     BottomNavigationBarItem(icon: Icon(Icons.report), label: 'お知らせ'),
+        //   ],
+        //   type: BottomNavigationBarType.fixed,
+        // ),
       ),
-      // bottomNavigationBar: BottomNavigationBar(
-      //   currentIndex:  _selectedIndex,
-      //   onTap: _onIconTapped,
-      //   items: const <BottomNavigationBarItem>[
-      //     BottomNavigationBarItem(icon: Icon(Icons.home_work_outlined), label: 'レポート＆小テスト'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), label: 'コース一覧'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.report), label: 'お知らせ'),
-      //   ],
-      //   type: BottomNavigationBarType.fixed,
-      // ),
     );
   }
 

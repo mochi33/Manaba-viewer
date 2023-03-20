@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:untitled1/StreamManager.dart';
 import 'package:untitled1/html_function.dart';
 import 'package:untitled1/manaba_data.dart';
 import 'package:untitled1/page/pdf_page.dart';
@@ -32,7 +33,7 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
   Map<String, String> contentDetail = {};
   String contentDetailID = '';
   bool isFirstLoad = true;
-  late Stream contentStream = ManageDataStream.getContentDetailStream();
+  late Stream contentStream = StreamManager.getStream("contentDetail");
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +94,7 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
                                       onPressed: () => setState(() {
                                         isFirstLoad = false;
                                         contentDetailID = contentDetailList[index]['ID'] ?? '';
-                                        contentStream = ManageDataStream.getContentDetailStream();
+                                        contentStream = StreamManager.getStream("contentDetail");
                                       }),
                                     ),
                                     Divider(height: DeviceInfo.deviceHeight * 0.005),
@@ -121,7 +122,7 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
                                       launchUrl(Uri.parse('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? '')), mode: LaunchMode.externalApplication);
                                     }
                                   } else {
-                                    launchUrl(Uri.parse(HtmlFunction.urlAsciiDecoder(link?.split('url=')[1] ?? '')), mode: LaunchMode.externalApplication);
+                                    launchUrl(Uri.parse(HtmlFunction.urlAsciiDecoder((HtmlFunction.parseString(link, r'\"', null) ?? '').split('url=')[1] ?? '')), mode: LaunchMode.externalApplication);
                                   }
                                   //final filename = await downloadFile('https://ct.ritsumei.ac.jp/ct/' + (HtmlFunction.parseString(link, r'\"', null) ?? ''), "", '');
                                   //print(filename);
