@@ -1,6 +1,9 @@
 # Manaba Viewer
 
-A new Flutter project.
+立命館大学の学生専用サイト「manaba」を便利に手軽に閲覧するツール.
+
+Google Play:
+https://play.google.com/store/apps/details?id=com.mochi.manaba_viewer
 
 ## Getting Started
 
